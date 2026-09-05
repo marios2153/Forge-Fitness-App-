@@ -1,0 +1,13 @@
+{
+  "name": "Forge Gym Tracker",
+  "short_name": "Forge",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f8f4",
+  "theme_color": "#14231f",
+  "description": "Track workouts, goals, progress photos, and gym days.",
+  "icons": [
+    { "src": "logo.svg", "sizes": "64x64", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "logo.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#14231f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" href="logo.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="logo.svg" />
+  <title>Forge - Your training, measured</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>.runner-modal #runner-finish:disabled{opacity:.45;cursor:not-allowed}.report-exercise-stats{grid-column:1/-1;background:var(--paper);padding:8px}.report-exercise-stats article{background:white;border-bottom:1px solid var(--line);padding:11px;text-align:left}.report-exercise-stats article:last-child{border-bottom:0}.report-exercise-stats b,.report-exercise-stats span,.report-exercise-stats small{display:block}.report-exercise-stats b{font-size:11px}.report-exercise-stats span{font:9px var(--mono);color:var(--ink);margin-top:4px}.report-exercise-stats small{font-size:9px;color:var(--muted);margin-top:4px}
+.language-picker{display:block;color:#b8c8b9;font:10px var(--mono);margin-bottom:22px}.language-picker select,.language-select{border:1px solid #40534a;background:var(--ink);color:white;padding:7px 9px;font:10px var(--mono);margin-left:7px;border-radius:2px}.topbar-actions{display:flex;align-items:center;gap:8px}.language-select{margin:0;background:var(--paper);color:var(--ink);border-color:var(--line);padding:6px 4px}.runner-modal,.report-modal,.reports-modal{max-height:86vh;overflow-y:auto}.runner-head{display:flex;justify-content:space-between;align-items:flex-start}.runner-head h2{margin-bottom:0}.runner-meta{display:flex;justify-content:space-between;align-items:center;background:var(--ink);color:white;padding:13px;margin:17px 0;font:9px var(--mono)}.runner-meta strong{font:800 22px var(--sans);color:var(--lime)}.runner-exercise{background:white;border:1px solid var(--line);padding:13px;margin-bottom:8px;opacity:.55}.runner-exercise.active{opacity:1;border-color:var(--coral)}.runner-exercise.finished{border-color:var(--lime);opacity:.85}.runner-exercise-top{display:flex;align-items:center;gap:9px}.runner-exercise-top>div{flex:1}.runner-exercise-top b,.runner-exercise-top small{display:block}.runner-exercise-top b{font-size:11px}.runner-exercise-top small{font-size:9px;color:var(--muted);margin-top:3px}.runner-set-count{font:10px var(--mono);color:var(--muted)}.runner-controls{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);margin-top:12px;padding-top:12px;font:9px var(--mono)}.runner-controls .primary-button{width:auto;margin:0;padding:10px}.runner-status{min-height:30px;color:var(--muted);font-size:10px;line-height:1.4;margin:12px 0}.report-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);margin:18px 0}.report-summary>div{background:white;padding:12px 8px;text-align:center}.report-summary b,.report-summary span{display:block}.report-summary b{font-size:19px}.report-summary span{font:8px var(--mono);color:var(--muted);margin-top:4px}.report-summary p{grid-column:1/-1;background:white;padding:13px;margin:0;color:var(--muted);font-size:10px;line-height:1.5}.saved-report{border-bottom:1px solid var(--line);padding:13px 0}.saved-report b,.saved-report span,.saved-report small{display:block}.saved-report b{font-size:11px}.saved-report span{font:9px var(--mono);margin-top:4px}.saved-report small{color:var(--muted);font-size:9px;line-height:1.4;margin-top:5px}.empty-state{color:var(--muted);font-size:10px;line-height:1.5}.menu-sheet{position:fixed;inset:auto 0 0;z-index:9;background:var(--paper);max-width:480px;margin:auto;padding:24px 20px 32px;box-shadow:0 -12px 35px #14231f22;transform:translateY(105%);transition:transform .25s ease}.menu-sheet.open{transform:translateY(0)}.menu-close{float:right;background:none;font-size:24px}.menu-sheet h2{font-size:22px;margin:5px 0 18px}.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;clear:both}.menu-grid button{background:white;border:1px solid var(--line);padding:15px;text-align:left;font-size:20px}.menu-grid span{font:700 10px var(--sans);vertical-align:3px;margin-left:5px}
+:root{--ink:#14231f;--muted:#76837d;--line:#e5e9e3;--paper:#f7f8f4;--white:#fff;--lime:#d9ef54;--coral:#ff765f;--blue:#76b6d7;--mono:'DM Mono',monospace;--sans:'Manrope',sans-serif}*{box-sizing:border-box}body{margin:0;background:#dfe5df;color:var(--ink);font-family:var(--sans)}button{font:inherit;border:0;cursor:pointer;color:inherit}.app-shell{max-width:480px;min-height:100vh;margin:auto;background:var(--paper);padding:28px 20px 96px;position:relative;overflow:hidden}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px}.eyebrow{font:500 10px var(--mono);letter-spacing:1.2px;color:var(--muted);margin:0 0 7px}.eyebrow.light{color:#b8c8b9}h1,h2,h3,p{margin-top:0}h1{font-size:23px;line-height:1.1;letter-spacing:-.6px;margin:0;font-weight:800}.accent,em{color:var(--coral);font-style:normal}.avatar,.large-avatar{display:grid;place-items:center;border-radius:50%;background:var(--ink);color:var(--lime);font-weight:800}.avatar{width:42px;height:42px;font-size:12px}.hero-panel{height:172px;background:var(--ink);color:white;border-radius:4px;padding:24px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden}.hero-panel:after{content:'';width:220px;height:220px;border:1px solid #31443e;position:absolute;border-radius:50%;right:-83px;top:-69px}.hero-copy{z-index:1}.hero-copy strong{display:block;font-size:47px;line-height:1;margin-bottom:9px;letter-spacing:-2px}.hero-copy strong span{font-size:14px;letter-spacing:0;color:#9db0a4}.hero-copy p:last-child{color:#b8c8b9;font-size:11px;max-width:185px;line-height:1.5;margin:0}.ring{width:84px;height:84px;border-radius:50%;border:6px solid #43564b;border-right-color:var(--lime);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}.ring span{font-size:19px;font-weight:800}.ring small{font:8px var(--mono);color:#aabdac;margin-top:3px}.section-heading{display:flex;align-items:end;justify-content:space-between;margin:31px 0 13px}.section-heading.compact{margin-top:31px}.section-heading h2,.page-heading h2{font-size:18px;letter-spacing:-.5px;margin:0;font-weight:800}.text-button{font-size:11px;background:none;color:var(--coral);font-weight:700}.text-button span{font-size:17px;margin-left:3px}.workout-card{background:white;border:1px solid var(--line);padding:19px 17px 17px;border-radius:4px}.workout-card-top{font:9px var(--mono);color:var(--muted);display:flex;align-items:center;gap:7px}.status-dot{width:7px;height:7px;background:var(--lime);border-radius:50%}.workout-time{margin-left:auto}.workout-card h3{font-size:19px;margin:19px 0 3px}.workout-card>p{font-size:11px;color:var(--muted);margin-bottom:17px}.exercise-preview{border-top:1px solid var(--line);display:grid;grid-template-columns:32px 1fr auto;align-items:center;padding:13px 0}.exercise-number{font:10px var(--mono);color:var(--coral)}.exercise-preview b,.exercise-preview span{display:block}.exercise-preview b{font-size:12px}.exercise-preview span{font-size:10px;color:var(--muted);margin-top:4px}.exercise-preview strong{font-size:14px}.exercise-preview small{font-size:9px;color:var(--muted);font-weight:400}.primary-button{display:flex;justify-content:center;align-items:center;gap:14px;width:100%;background:var(--coral);padding:15px;color:white;font-size:12px;font-weight:800;border-radius:3px;margin-top:12px}.primary-button span{font-size:17px}.icon-button{width:28px;height:28px;background:white;border:1px solid var(--line);font-size:16px}.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat-card{background:white;border:1px solid var(--line);padding:15px 13px;position:relative;min-height:111px}.stat-card.wide{grid-column:span 2;min-height:126px}.stat-card span,.details-card span{display:block;font:9px var(--mono);color:var(--muted);letter-spacing:.6px;margin-bottom:14px}.stat-card>b{font-size:23px;display:block;letter-spacing:-1px}.stat-card b small{font-size:10px;letter-spacing:0}.stat-card>small{color:var(--muted);font-size:9px}.stat-card em{position:absolute;right:12px;top:15px;font:9px var(--mono)}.mini-bars{display:flex;gap:4px;align-items:end;position:absolute;right:14px;bottom:15px;height:34px}.mini-bars i{display:block;width:8px;background:var(--lime);height:35%}.mini-bars i:nth-child(2){height:50%}.mini-bars i:nth-child(3){height:42%}.mini-bars i:nth-child(4){height:65%}.mini-bars i:nth-child(5){height:55%}.mini-bars i:nth-child(6){height:78%}.mini-bars i:nth-child(7){height:100%;background:var(--coral)}.tab-content{display:none}.tab-content.active{display:block}.page-heading{margin:15px 0 27px}.page-heading h2{font-size:27px;margin-bottom:8px}.page-heading>p:last-child{font-size:12px;color:var(--muted);line-height:1.5;margin:0}.filter-row{display:flex;gap:7px;margin-bottom:17px}.filter{background:white;border:1px solid var(--line);font-size:10px;padding:8px 13px}.filter.active{background:var(--ink);color:white}.exercise-list{background:white;border:1px solid var(--line)}.exercise-row{width:100%;background:white;display:flex;align-items:center;text-align:left;gap:11px;padding:14px;border-bottom:1px solid var(--line)}.exercise-row:last-child{border:0}.exercise-icon{display:grid;place-items:center;background:#eef1eb;width:35px;height:35px;font:10px var(--mono)}.exercise-row b,.exercise-row small{display:block}.exercise-row b{font-size:12px}.exercise-row small{font-size:10px;color:var(--muted);margin-top:3px}.check,.add{margin-left:auto;font-size:17px}.check{color:var(--coral)}.add{color:var(--muted)}.full{margin-top:18px}.chart-card{background:var(--ink);padding:18px;color:white}.chart-header{display:flex;justify-content:space-between;font-size:10px;color:#aabdac}.chart-header b{color:white}.chart-header em{font:9px var(--mono);margin-left:6px}.chart{height:130px;margin-top:21px;border-bottom:1px solid #405149;position:relative;background:repeating-linear-gradient(to bottom,transparent 0,transparent 31px,#2d3f38 32px)}.chart-line{position:absolute;left:3%;right:2%;top:40%;height:65%;border-top:2px solid var(--lime);clip-path:polygon(0 70%,18% 54%,33% 60%,48% 38%,64% 46%,79% 20%,100% 0,100% 5%,79% 25%,64% 51%,48% 43%,33% 65%,18% 59%,0 75%)}.point{position:absolute;width:7px;height:7px;background:var(--lime);border-radius:50%;top:36%}.p1{left:2%}.p2{left:20%;top:28%}.p3{left:35%;top:33%}.p4{left:65%;top:17%}.p5{right:1%;top:0}.chart-labels{display:flex;justify-content:space-between;font:8px var(--mono);color:#82968a;margin-top:11px}.upload-button{font-size:10px;color:var(--coral);font-weight:700}.upload-button input{display:none}.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.photo-placeholder{grid-column:span 2;border:1px dashed #c5cec6;height:125px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}.photo-placeholder span{font-size:9px;margin-top:6px}.goal-card{display:grid;grid-template-columns:39px 1fr 15px;gap:12px;background:white;border:1px solid var(--line);padding:17px 14px;margin-bottom:10px}.goal-icon{display:grid;place-items:center;width:35px;height:35px;background:var(--lime);font:10px var(--mono)}.goal-icon.coral{background:#ffd4ca}.goal-card b,.goal-card span,.goal-card small{display:block}.goal-card b{font-size:12px}.goal-card span{color:var(--muted);font-size:10px;margin:5px 0 13px}.goal-card small{font-size:9px;color:var(--muted);margin-top:6px}.progress-track{height:5px;background:#e8ece7}.progress-track i{display:block;height:100%;background:var(--ink)}.coral-track i{background:var(--coral)}.more-button{background:none;align-self:start;color:var(--muted);letter-spacing:2px}.secondary-button{width:100%;padding:14px;background:transparent;border:1px solid #cbd4cc;font-size:11px;font-weight:700}.profile-heading{text-align:center;margin:14px 0 27px}.large-avatar{width:66px;height:66px;margin:0 auto 18px;font-size:17px}.profile-heading h2{font-size:25px;margin:0 0 5px}.profile-heading>p:last-child{font-size:11px;color:var(--muted)}.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;background:white;border:1px solid var(--line);padding:17px 5px;margin-bottom:10px}.profile-stats div{border-right:1px solid var(--line)}.profile-stats div:last-child{border:0}.profile-stats b,.profile-stats span{display:block}.profile-stats b{font-size:20px}.profile-stats span{font-size:9px;color:var(--muted);margin-top:4px}.details-card{display:grid;grid-template-columns:1fr 1fr;background:white;border:1px solid var(--line);padding:17px;margin-bottom:17px}.details-card div{padding:8px 0}.details-card span{margin-bottom:6px}.details-card b{font-size:12px}.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(480px,100%);height:72px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);z-index:4}.nav-item{background:none;color:#88938c;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.nav-item span{font-size:20px;line-height:1}.nav-item.active{color:var(--ink);font-weight:800}.nav-item.active span{color:var(--coral)}.toast{position:fixed;bottom:88px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:white;padding:12px 17px;font-size:11px;opacity:0;pointer-events:none;transition:.25s;z-index:5}.toast.show{opacity:1;transform:translate(-50%,0)}@media(min-width:600px){.app-shell{margin:24px auto;box-shadow:0 15px 50px #33433c22;min-height:calc(100vh - 48px)}}.brand-header{display:flex;align-items:center;gap:8px;margin-bottom:18px;color:var(--ink)}.brand-header .brand-logo{color:var(--ink);flex-shrink:0}.brand-header .brand-word{font:800 13px var(--sans);letter-spacing:3px}
+.auth-mark{display:flex;align-items:center;gap:10px;margin-bottom:22px}.auth-mark svg{color:white;flex-shrink:0}.auth-mark .brand-word{font:800 28px var(--sans);letter-spacing:4px;color:white}.auth-mark .brand-word span{color:var(--coral)}
+.profile-page .brand-header{margin-bottom:27px}
+.exercise-icon.emoji{font-size:16px}
+.exercise-row{cursor:pointer}
+.row-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.row-edit{color:var(--muted);font-size:13px}
+.exercise-row.library-row[disabled]{opacity:.45;pointer-events:none}
+.library-list{max-height:340px;overflow-y:auto;background:white;border:1px solid var(--line);margin:14px 0}
+.custom-exercise-form{margin-top:14px}
+.custom-exercise-form.hidden{display:none}
+.rest-timer-bar{position:fixed;left:50%;bottom:84px;width:min(440px,92%);background:var(--ink);color:white;border-radius:6px;padding:12px 14px;opacity:0;pointer-events:none;transition:.25s;z-index:6;overflow:hidden;transform:translateX(-50%) translateY(20px)}
+.rest-timer-bar.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.rest-timer-bar .rest-fill{position:absolute;inset:0;background:#2d3f38;width:100%;transition:width 1s linear;z-index:0}
+.rest-timer-bar .rest-content{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between}
+.rest-timer-bar .rest-label{display:block;font:9px var(--mono);color:#aabdac;letter-spacing:1px}
+.rest-timer-bar .rest-time{display:block;font:800 20px var(--sans);margin-top:3px}
+.rest-timer-bar .rest-actions{display:flex;gap:8px}
+.rest-timer-bar .rest-actions button{background:#30423b;color:white;font-size:10px;padding:8px 10px;border-radius:4px;font-weight:700}
+.rest-timer-bar .rest-skip{background:var(--coral)}
+.premium-tabs{display:flex;gap:6px;margin:16px 0}
+.premium-tab{flex:1;background:white;border:1px solid var(--line);padding:10px 4px;font-size:9px;font-weight:800;text-align:center;letter-spacing:.3px}
+.premium-tab.active{background:var(--ink);color:white}
+.premium-tab-content{display:none}
+.premium-tab-content.active{display:block}
+.benefit-list{background:white;border:1px solid var(--line)}
+.benefit-row{display:flex;gap:12px;padding:14px;border-bottom:1px solid var(--line);align-items:flex-start}
+.benefit-row:last-child{border-bottom:0}
+.benefit-icon{font-size:18px;flex-shrink:0;line-height:1.3}
+.benefit-row b{display:block;font-size:12px;margin-bottom:5px}
+.benefit-row p{font-size:10px;color:var(--muted);line-height:1.5;margin:0}
+.pricing-note{font-size:10px;color:var(--muted);line-height:1.5;margin-top:14px}
+.runner-set-editor{display:flex;align-items:center;gap:9px;border-top:1px solid var(--line);margin-top:11px;padding-top:11px;font:9px var(--mono);color:var(--muted)}
+.runner-set-editor b{margin-left:auto;font:800 13px var(--sans);color:var(--ink);min-width:16px;text-align:center;order:2}
+.runner-set-editor .set-step{width:26px;height:26px;background:white;border:1px solid var(--line);font-size:15px;font-weight:800;line-height:1}
+.runner-set-editor .set-step:first-of-type{order:1;margin-left:auto}
+.runner-set-editor .set-step:last-of-type{order:3}
+.runner-set-log{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.runner-set-chip{background:#eef1eb;font:9px var(--mono);padding:5px 7px;color:var(--ink)}
+.runner-exercise.finished .runner-set-chip{background:var(--lime)}
+.premium-lock{background:var(--ink);color:white;padding:22px 18px;text-align:center;margin-bottom:14px}
+.premium-lock .lock-icon{font-size:26px;display:block;margin-bottom:10px}
+.premium-lock b{display:block;font-size:14px;margin-bottom:8px}
+.premium-lock p{font-size:10px;color:#b8c8b9;line-height:1.6;margin:0}
+#nutrition-content.locked{opacity:.4;pointer-events:none;filter:grayscale(.6)}
+.goal-picker{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.goal-option{background:white;border:1px solid var(--line);padding:14px 10px;text-align:left;display:flex;align-items:center;gap:9px}
+.goal-option span{font-size:19px}
+.goal-option b{font-size:11px}
+.goal-option.active{background:var(--ink);color:white;border-color:var(--ink)}
+.macro-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+.macro-grid.tight{grid-template-columns:1fr 1fr 1fr;margin:16px 0}
+.macro-grid>div{background:white;padding:12px 10px}
+.macro-grid span{display:block;font:8px var(--mono);color:var(--muted);letter-spacing:.6px;margin-bottom:6px}
+.macro-grid b{display:block;font-size:11px;line-height:1.4}
+.nutrition-advice{background:white;border:1px solid var(--line);border-top:0;padding:14px;font-size:10px;color:var(--muted);line-height:1.6;margin:0}
+.recipe-list{background:white;border:1px solid var(--line)}
+.recipe-row{width:100%;background:white;display:flex;gap:11px;align-items:flex-start;text-align:left;padding:14px;border-bottom:1px solid var(--line)}
+.recipe-row:last-child{border-bottom:0}
+.recipe-icon{font-size:21px;flex-shrink:0;line-height:1.2}
+.recipe-copy{flex:1}
+.recipe-copy b{display:block;font-size:12px}
+.recipe-copy small{display:block;font:9px var(--mono);color:var(--coral);margin-top:4px}
+.recipe-copy em{display:block;font-style:normal;font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px}
+.recipe-modal{max-height:88vh;overflow-y:auto}
+.recipe-summary{font-size:11px;color:var(--muted);line-height:1.6;margin:0}
+.recipe-heading{font-size:13px;margin:20px 0 10px;font-weight:800}
+.recipe-list-ul,.recipe-steps{margin:0;padding-left:18px}
+.recipe-list-ul li,.recipe-steps li{font-size:11px;line-height:1.7;color:var(--ink)}
+.recipe-steps li{margin-bottom:8px}
+.recipe-benefit{background:var(--lime);padding:14px;font-size:10px;line-height:1.6;margin:0}
+.workout-templates{display:grid;gap:10px}
+.template-card{background:white;border:1px solid var(--line);padding:15px 14px}
+.template-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.template-top b{display:block;font-size:13px}
+.template-top small{display:block;font:9px var(--mono);color:var(--muted);margin-top:5px}
+.template-delete{background:none;font-size:14px;color:var(--muted);padding:2px 4px}
+.template-chips{display:flex;flex-wrap:wrap;gap:5px;margin:12px 0}
+.template-chip{background:#eef1eb;font-size:9px;padding:5px 7px}
+.template-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.template-actions .primary-button,.template-actions .secondary-button{margin:0;padding:11px;width:auto}
+.builder-modal{max-height:88vh;overflow-y:auto}
+.builder-modal .section-heading{margin:22px 0 12px}
+.builder-list{display:grid;gap:9px}
+.builder-row{background:white;border:1px solid var(--line);padding:13px}
+.builder-row-top{display:flex;align-items:center;gap:10px}
+.builder-row-top>div:nth-child(2){flex:1}
+.builder-row-top b{display:block;font-size:12px}
+.builder-row-top small{display:block;font-size:9px;color:var(--muted);margin-top:3px}
+.builder-order{display:flex;gap:4px}
+.builder-order button{width:25px;height:25px;background:var(--paper);border:1px solid var(--line);font-size:12px;line-height:1;color:var(--muted)}
+.builder-order button[data-remove]{color:var(--coral)}
+.builder-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid var(--line);margin-top:11px;padding-top:11px}
+.builder-fields label{display:block;font:9px var(--mono);color:var(--muted);margin:0}
+.builder-fields input{width:100%;padding:8px;border:1px solid var(--line);font:12px var(--sans);margin-top:5px;border-radius:2px}
+.builder-modal .primary-button.full,.builder-modal .secondary-button.full{margin-top:10px}
+.timer-ring{position:relative;width:74px;height:74px;flex-shrink:0}
+.timer-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.timer-ring circle{fill:none;stroke-width:7;cx:60;cy:60}
+.timer-ring .ring-track{stroke:#3c4f46}
+.timer-ring .ring-fill{stroke:var(--lime);stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s}
+.timer-ring .ring-fill.overtime{stroke:#3c4f46}
+.timer-ring strong{position:absolute;inset:0;display:grid;place-items:center;font:800 16px var(--sans);color:white}
+.runner-meta{padding:14px 15px}
+.hydration-banner{display:none;align-items:flex-start;gap:11px;background:#dff0f7;border:1px solid #a9d4e6;padding:13px;margin-bottom:13px}
+.hydration-banner.show{display:flex}
+.hydration-icon{font-size:20px;line-height:1.2;flex-shrink:0}
+.hydration-banner>div{flex:1}
+.hydration-banner b{display:block;font-size:12px;color:#14231f}
+.hydration-banner span{display:block;font-size:10px;color:#4a6b7a;line-height:1.5;margin-top:5px}
+.hydration-close{background:none;font-size:18px;color:#6d8d9c;line-height:1;padding:0 2px}
+.request-list{display:grid;gap:9px}
+.request-row{background:white;border:1px solid var(--line);padding:13px;display:flex;gap:11px;align-items:flex-start}
+.request-copy{flex:1}
+.request-copy b{display:block;font-size:12px}
+.request-tag{display:inline-block;font:9px var(--mono);background:#eef1eb;padding:3px 6px;margin-top:5px}
+.request-copy small{display:block;font-size:10px;color:var(--muted);margin-top:6px;line-height:1.4}
+.request-copy em{display:block;font:8px var(--mono);color:var(--muted);font-style:normal;margin-top:5px}
+.request-actions{display:grid;gap:5px;flex-shrink:0}
+.request-actions button{padding:8px 11px;font-size:9px;font-weight:800}
+.request-accept{background:var(--ink);color:white}
+.request-decline{background:white;border:1px solid var(--line);color:var(--muted)}
+.calendar-legend{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font:9px var(--mono);color:var(--muted)}
+.legend-item i{width:10px;height:10px;border-radius:50%;display:block}
+.legend-item .dot-train{background:var(--lime)}
+.legend-item .dot-rest{background:#d7dedd;border:1px solid #bcc7c5}
+.legend-item .dot-done{background:var(--ink)}
+.calendar-day{background:transparent;height:44px;border-radius:6px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0}
+.calendar-day .day-number{font-size:11px;line-height:1}
+.calendar-day .day-time{font:7px var(--mono);color:#4a5a52;line-height:1}
+.calendar-day.training{background:var(--lime);font-weight:800}
+.calendar-day.rest{background:#e8edec;color:#8a9793}
+.calendar-day.rest:after{content:'';position:absolute;left:9px;right:9px;top:50%;height:1px;background:#b3c0bd}
+.calendar-day.completed{background:var(--ink);color:white}
+.calendar-day.completed .day-time{color:#aabdac}
+.calendar-day.completed:before{content:'✓';position:absolute;top:3px;right:5px;font-size:8px;color:var(--lime)}
+.month-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-top:0;margin-bottom:12px}
+.month-summary>div{background:white;padding:12px 6px;text-align:center}
+.month-summary b{display:block;font-size:18px}
+.month-summary span{display:block;font:8px var(--mono);color:var(--muted);margin-top:4px}
+.month-summary .summary-bar{grid-column:1/-1;text-align:left;padding:13px}
+.month-summary .summary-bar small{display:block;font-size:9px;color:var(--muted);margin-top:7px;line-height:1.4}
+.schedule-label{margin:0 0 9px}
+.day-detail{margin-bottom:12px}
+.day-detail-card{display:flex;align-items:center;justify-content:space-between;gap:10px;background:white;border:1px solid var(--line);padding:13px;margin-bottom:7px}
+.day-detail-card.is-done{border-color:var(--lime)}
+.day-detail-card .eyebrow{margin:0 0 5px}
+.day-detail-card b{display:block;font-size:12px}
+.day-detail-card small{display:block;font-size:10px;color:var(--muted);margin-top:5px}
+.done-flag{display:inline-block;font:9px var(--mono);color:#3b6d11;background:#eaf3de;padding:3px 6px;margin-top:6px}
+#day-modal .secondary-button.full{margin-top:10px}
+</style>
+  <style>
+    .auth-screen{position:fixed;inset:0;background:var(--ink);color:white;z-index:10;padding:16vh 28px 30px;max-width:480px;margin:auto}.auth-screen.hidden{display:none}.auth-screen h2{font-size:38px;line-height:1.05;letter-spacing:-1.5px;margin:8px 0 33px}.auth-form label,.modal-panel label{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:14px}.auth-form input,.modal-panel input{display:block;width:100%;border:1px solid #dfe5df;background:white;color:var(--ink);padding:13px 12px;margin-top:6px;font:12px var(--sans);border-radius:2px}.auth-form .primary-button{margin-top:22px}.auth-switch{background:none;color:var(--coral);font-size:10px;font-weight:700;margin:17px auto;display:block}.signup-only{display:none}.signup-only.visible{display:block}.form-message{font-size:10px;color:var(--lime);text-align:center;min-height:15px}.program-toolbar{display:flex;justify-content:space-between;align-items:center;background:var(--ink);color:#c4d4c5;padding:12px 13px;font:9px var(--mono);margin-bottom:17px}.program-toolbar .text-button{font-size:9px}.calendar-card{background:white;border:1px solid var(--line);padding:17px 12px}.calendar-title{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:22px}.calendar-arrow{background:none;font-size:24px;color:var(--muted);line-height:1}.week-labels,.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}.week-labels{font:8px var(--mono);color:var(--muted);margin-bottom:8px}.calendar-day{background:transparent;height:35px;font-size:11px;border-radius:50%;position:relative}.calendar-day.planned{background:var(--lime);font-weight:800}.calendar-day.planned:after{content:'';position:absolute;width:3px;height:3px;background:var(--coral);border-radius:50%;bottom:5px;left:calc(50% - 1px)}.reminder-card{display:flex;align-items:center;justify-content:space-between;background:var(--ink);color:white;padding:17px 14px;margin-top:12px}.reminder-card b,.reminder-card span{display:block}.reminder-card b{font-size:12px;margin-bottom:7px}.reminder-card span{color:#aabdac;font-size:9px}.toggle{background:#65776b;width:40px;height:23px;border-radius:20px;padding:3px}.toggle i{display:block;background:white;width:17px;height:17px;border-radius:50%;transition:.2s}.toggle.active{background:var(--coral)}.toggle.active i{transform:translateX(17px)}.secondary-button.full{margin-top:10px}.sign-out{margin-top:20px}.modal-backdrop{display:none;position:fixed;inset:0;background:#14231f99;z-index:20;align-items:end;justify-content:center}.modal-backdrop.open{display:flex}.modal-panel{display:none;background:var(--paper);width:min(480px,100%);padding:27px 22px 34px;position:relative}.modal-panel.open{display:block}.modal-panel h2{font-size:23px;line-height:1.15;margin:4px 0 24px}.modal-close{position:absolute;right:17px;top:15px;background:none;font-size:25px;color:var(--muted)}.modal-panel .primary-button{margin-top:20px}.modal-panel label{color:var(--muted)}
+    @media(min-width:600px){.auth-screen{margin:24px auto;box-shadow:0 15px 50px #33433c22;min-height:calc(100vh - 48px)}}
+    .auth-screen{overflow-y:auto}
+    .auth-form .signup-only{display:none}.auth-form .signup-only.visible{display:block}.auth-form select{display:block;width:100%;padding:13px 12px;margin-top:6px;border:1px solid #dfe5df;background:white;color:var(--ink);font:12px var(--sans);border-radius:2px}
+    .modal-panel select{display:block;width:100%;padding:13px 12px;margin-top:6px;border:1px solid #dfe5df;background:white;color:var(--ink);font:12px var(--sans);border-radius:2px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .social-search{display:flex;background:white;border:1px solid var(--line);padding:5px;margin-bottom:18px}.social-search input{border:0;outline:0;background:transparent;flex:1;padding:9px;font:11px var(--sans)}.social-search button{background:var(--coral);color:white;width:36px;font-size:20px}.friend-count{font:9px var(--mono);color:var(--muted)}.friend-list{background:white;border:1px solid var(--line)}.friend-row,.search-result{display:flex;align-items:center;gap:10px;padding:13px;border-bottom:1px solid var(--line)}.friend-row:last-child{border-bottom:0}.friend-avatar{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--lime);font-size:10px;font-weight:800;flex-shrink:0}.coral-avatar{background:#ffd4ca}.friend-row b,.friend-row small,.search-result b,.search-result small{display:block}.friend-row b,.search-result b{font-size:11px}.friend-row small,.search-result small{font-size:9px;color:var(--muted);margin-top:4px}.invite-button{margin-left:auto;background:var(--ink);color:white;padding:8px 10px;font-size:9px;font-weight:800}.search-result{background:white;border:1px solid var(--line);margin-bottom:18px}.social-confirmation{font-size:10px;color:var(--coral);margin:10px 0 18px}.feed-list{border-top:1px solid var(--line)}.feed-item{display:flex;gap:10px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line)}.feed-item>div{flex:1}.feed-item b{font-size:11px}.feed-item p{font-size:10px;color:var(--muted);margin:5px 0}.feed-item small{font:8px var(--mono);color:var(--muted)}.feed-badge{background:var(--lime);font:9px var(--mono);padding:5px}.feed-badge.fire{background:#ffd4ca}
+    .signup-details{display:grid;grid-template-columns:1fr 1fr;gap:10px}.profile-page{display:none;position:fixed;inset:0;z-index:8;background:var(--paper);max-width:480px;margin:auto;padding:28px 20px 50px;overflow-y:auto}.profile-page.open{display:block}.profile-page-top{display:grid;grid-template-columns:32px 1fr 32px;align-items:center;margin-bottom:35px}.profile-page-top .eyebrow{text-align:center;margin:0}.back-button{background:none;font-size:24px;text-align:left}.profile-page-top .icon-button{justify-self:end}.profile-page .profile-heading{margin-top:0}
+    .section-brand{display:flex;align-items:center;gap:7px;margin:0 0 22px;color:var(--ink);font:800 12px var(--sans);letter-spacing:2px}.section-brand .brand-mark{display:grid;place-items:center;width:21px;height:21px;background:var(--ink);color:var(--lime);font:800 11px var(--sans);letter-spacing:0;border-radius:50%}.profile-page .section-brand{margin-bottom:27px}
+    .billing-toggle{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:17px}.billing-option{background:#30423b;color:#b8c8b9;padding:11px 8px;text-align:left;border:1px solid transparent;font-size:10px}.billing-option strong,.billing-option small{display:block}.billing-option strong{color:white;font-size:15px;margin-top:5px}.billing-option small{font-size:8px;margin-top:3px}.billing-option.active{border-color:var(--lime);background:#3d5147;color:white}.premium-features{grid-template-columns:1fr 1fr}.premium-feature span{line-height:1.4}.theme-group{margin:12px 0 17px}.theme-group>span{font:9px var(--mono);color:var(--muted);text-transform:uppercase}.theme-group .theme-row{margin-top:7px}
+    .payment-summary{background:var(--lime);padding:12px;font:500 13px var(--mono);margin:0 0 20px}.secure-note{display:block;color:var(--muted);font-size:9px;line-height:1.4;margin-top:12px}
+    .premium-banner{display:flex;align-items:center;justify-content:space-between;background:var(--lime);padding:16px;margin-top:20px}.premium-banner b,.premium-banner span{display:block}.premium-banner b{font-size:12px}.premium-banner span{font-size:9px;margin-top:5px}.premium-price{font:500 11px var(--mono)}.premium-card{background:var(--ink);color:white;padding:20px;margin-bottom:12px}.premium-card h3{font-size:23px;margin:5px 0 8px}.premium-card p{font-size:10px;color:#b8c8b9;line-height:1.5}.premium-card .primary-button{margin-top:17px}.premium-features{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.premium-feature{background:white;border:1px solid var(--line);padding:14px}.premium-feature b,.premium-feature span{display:block}.premium-feature b{font-size:11px}.premium-feature span{font-size:9px;color:var(--muted);margin-top:5px}.tracker-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.tracker-card{background:white;border:1px solid var(--line);padding:14px}.tracker-card label{display:block;font:9px var(--mono);color:var(--muted);margin-bottom:8px}.tracker-card input{width:100%;padding:9px;border:1px solid var(--line);font:12px var(--sans)}.tracker-card small{display:block;color:var(--muted);font-size:9px;margin-top:7px}.report-card{background:white;border:1px solid var(--line);padding:16px;margin-top:12px}.report-card b,.report-card span{display:block}.report-card b{font-size:13px}.report-card span{font-size:10px;color:var(--muted);margin-top:5px}.theme-row{display:flex;gap:8px;margin-top:10px}.theme-swatch{width:30px;height:30px;border:2px solid transparent}.theme-swatch.active{border-color:var(--ink)}
+  </style>
+</head>
+<body>
+  <section class="auth-screen" id="auth-screen">
+    <div class="auth-mark"><svg viewBox="0 0 64 64" width="26" height="26" aria-hidden="true"><rect x="4" y="20" width="9" height="24" rx="3" fill="currentColor"/><rect x="51" y="20" width="9" height="24" rx="3" fill="currentColor"/><rect x="15" y="25" width="6" height="14" rx="2" fill="currentColor"/><rect x="43" y="25" width="6" height="14" rx="2" fill="currentColor"/><rect x="21" y="29" width="22" height="6" rx="2" fill="#ff765f"/></svg><span class="brand-word">F<span>O</span>RGE</span></div>
+    <label class="language-picker">Language<select id="language-select"><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="el">Ελληνικά</option><option value="ar">العربية</option></select></label>
+    <p class="eyebrow">YOUR TRAINING, MEASURED</p>
+    <h2>Build a stronger<br />routine.</h2>
+    <form id="auth-form" class="auth-form">
+      <label>Email<input type="email" id="auth-email" placeholder="you@example.com" required /></label>
+      <label>Password<input type="password" id="auth-password" placeholder="6+ characters" minlength="6" required /></label>
+      <label class="signup-only">Your name<input type="text" id="auth-name" placeholder="Alex Carter" /></label>
+      <div class="signup-details signup-only"><label>Height (cm)<input type="number" id="auth-height" placeholder="178" min="50" max="250" /></label><label>Weight (kg)<input type="number" id="auth-weight" placeholder="76" min="20" max="400" /></label></div><label class="signup-only">Gender<select id="auth-gender"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other / prefer not to say</option></select></label>
+      <label class="signup-only">Training focus<select id="auth-focus"><option value="Strength">Strength</option><option value="Hypertrophy">Muscle growth</option><option value="Fat loss">Fat loss</option><option value="General fitness">General fitness</option><option value="Endurance">Endurance</option><option value="Powerlifting">Powerlifting</option><option value="Bodybuilding">Bodybuilding</option><option value="Athletic performance">Athletic performance</option></select></label>
+      <label class="signup-only">Weekly gym target<input type="number" id="auth-target" placeholder="4" min="1" max="14" /></label>
+      <button class="primary-button" type="submit" id="auth-submit">Sign in <span>-></span></button>
+      <button class="auth-switch" type="button" id="auth-switch">New here? Create an account</button>
+      <p class="form-message" id="auth-message"></p>
+    </form>
+  </section>
+  <main class="app-shell">
+    <div class="brand-header"><svg class="brand-logo" viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><rect x="4" y="20" width="9" height="24" rx="3" fill="currentColor"/><rect x="51" y="20" width="9" height="24" rx="3" fill="currentColor"/><rect x="15" y="25" width="6" height="14" rx="2" fill="currentColor"/><rect x="43" y="25" width="6" height="14" rx="2" fill="currentColor"/><rect x="21" y="29" width="22" height="6" rx="2" fill="var(--coral)"/></svg><span class="brand-word">FORGE</span></div>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Thursday, September 4</p>
+        <h1>Good morning, Alex<span class="accent">.</span></h1>
+      </div>
+      <div class="topbar-actions"><select class="language-select" id="app-language-select" aria-label="Select language"><option value="en">EN</option><option value="es">ES</option><option value="fr">FR</option><option value="de">DE</option><option value="pt">PT</option><option value="el">EL</option><option value="ar">AR</option></select><button class="avatar" aria-label="Open profile" data-profile>AC</button></div>
+    </header>
+
+    <section class="hero-panel">
+      <div class="hero-copy">
+        <p class="eyebrow light">CURRENT STREAK</p>
+        <strong>12 <span>days</span></strong>
+        <p>Consistency is a superpower. Keep the momentum going.</p>
+      </div>
+      <div class="ring" aria-label="Weekly completion 75 percent"><span>3/4</span><small>THIS WEEK</small></div>
+    </section>
+
+    <div class="tab-content active" id="home-tab">
+      <section class="section-heading"><div><p class="eyebrow">TODAY'S PLAN</p><h2>Upper body power</h2></div><button class="text-button" data-tab="workout">Edit plan <span>+</span></button></section>
+      <section class="workout-card">
+        <div class="workout-card-top"><span class="status-dot"></span><span>READY TO TRAIN</span><span class="workout-time">45 MIN</span></div>
+        <h3>Push strength</h3><p>Chest, shoulders, and triceps</p>
+        <div class="exercise-preview"><div class="exercise-number">01</div><div><b>Bench press</b><span>4 sets x 8 reps</span></div><strong>60 <small>kg</small></strong></div>
+        <div class="exercise-preview"><div class="exercise-number">02</div><div><b>Overhead press</b><span>3 sets x 10 reps</span></div><strong>35 <small>kg</small></strong></div>
+        <button class="primary-button" id="start-workout">Start workout <span>-></span></button>
+      </section>
+
+      <section class="section-heading compact"><div><p class="eyebrow">YOUR NUMBERS</p><h2>Progress at a glance</h2></div><button class="icon-button" data-tab="progress" aria-label="View all progress">↗</button></section>
+      <div class="stats-grid"><div class="stat-card"><span>VOLUME</span><b>8,420</b><small>kg this week</small><em>+12.4%</em></div><div class="stat-card"><span>WORKOUTS</span><b id="workouts-count">14</b><small>this month</small><em>+3</em></div><div class="stat-card wide"><span>TOP LIFT</span><b id="top-lift-weight">82.5 <small>kg</small></b><small id="top-lift-name">Bench press · +5 kg this month</small><div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
+      <button class="premium-banner" data-tab="premium"><span><b>Forge Premium</b><span>Advanced tracking, themes and monthly reports</span></span><strong class="premium-price">€5.99 / mo →</strong></button>
+    </div>
+
+    <div class="tab-content" id="workout-tab"><div class="page-heading"><p class="eyebrow">TRAINING</p><h2>Your workouts</h2><p>Build a workout from scratch, then run it set by set with a live timer.</p></div><button class="primary-button full" id="new-workout">＋ New workout</button><div class="section-heading compact"><div><p class="eyebrow">SAVED WORKOUTS</p><h2>Start again anytime</h2></div><span class="friend-count" id="workout-count">0 SAVED</span></div><div class="workout-templates" id="workout-templates"></div></div>
+
+    <div class="tab-content" id="progress-tab"><div class="page-heading"><p class="eyebrow">PROGRESS</p><h2>Proof of your work</h2><p>Small improvements compound into a different you.</p></div><div class="chart-card"><div class="chart-header"><span>Weekly volume</span><b>8,420 kg <em>+12.4%</em></b></div><div class="chart"><span class="chart-line"></span><i class="point p1"></i><i class="point p2"></i><i class="point p3"></i><i class="point p4"></i><i class="point p5"></i></div><div class="chart-labels"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>NOW</span></div></div><div class="section-heading compact"><div><p class="eyebrow">BODY CHECK-INS</p><h2>Visual progress</h2></div><label class="upload-button">+ Add photo<input type="file" accept="image/*" id="photo-upload" /></label></div><div class="photo-grid" id="photo-grid"><div class="photo-placeholder">No photos yet<span>Upload your first check-in</span></div></div></div>
+
+    <div class="tab-content" id="goals-tab"><div class="page-heading"><p class="eyebrow">PERSONAL GOALS</p><h2>Make it measurable</h2><p>Keep the reason visible, especially on the hard days.</p></div><div class="goal-card primary-goal"><div class="goal-icon">01</div><div><b>Bench press 100 kg</b><span>82.5 kg current best</span><div class="progress-track"><i style="width:82%"></i></div><small>82% complete</small></div><button class="more-button">...</button></div><div class="goal-card"><div class="goal-icon coral">02</div><div><b>Train 4x every week</b><span>3 of 4 workouts completed</span><div class="progress-track coral-track"><i style="width:75%"></i></div><small>75% complete</small></div><button class="more-button">...</button></div><button class="secondary-button" id="add-goal">+ Create a new goal</button></div>
+
+    <div class="tab-content" id="calendar-tab"><div class="page-heading"><p class="eyebrow">TRAINING CALENDAR</p><h2>Plan your gym days</h2><p>Tap a day to cycle: training → rest day → clear. Use the pencil to set the time for a training day.</p></div><div class="calendar-legend"><span class="legend-item"><i class="dot-train"></i>Training</span><span class="legend-item"><i class="dot-rest"></i>Rest day</span><span class="legend-item"><i class="dot-done"></i>Completed</span></div><div class="calendar-card"><div class="calendar-title"><button class="calendar-arrow">‹</button><b>September 2026</b><button class="calendar-arrow">›</button></div><div class="week-labels"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div><div class="calendar-grid" id="calendar-grid"></div></div><div class="month-summary" id="month-summary"></div><div class="day-detail" id="day-detail"></div><div class="reminder-card"><div><p class="eyebrow">WEEKLY REMINDER</p><b>Remember your gym days</b><span id="reminder-status">Every Monday, Wednesday & Friday at 6:00 PM</span></div><button class="toggle active" id="reminder-toggle" aria-label="Toggle gym reminders"><i></i></button></div><button class="secondary-button full" id="schedule-reminder">Set reminder time</button></div>
+    <div class="tab-content" id="social-tab"><div class="page-heading"><p class="eyebrow">YOUR TRAINING CREW</p><h2>Train together</h2><p>Share the work, keep each other moving.</p></div><div class="social-search"><input id="friend-search" placeholder="Search by name or email" /><button id="find-friend" aria-label="Find friend">⌕</button></div><div id="friend-result"></div><div class="section-heading compact"><div><p class="eyebrow">INBOX</p><h2>Requests for you</h2></div><span class="friend-count" id="request-count">0 PENDING</span></div><div class="request-list" id="request-list"></div><div class="section-heading compact"><div><p class="eyebrow">YOUR FRIENDS</p><h2>Shared stats</h2></div><span class="friend-count" id="friend-count">2 FRIENDS</span></div><div class="friend-list" id="friend-list"><div class="friend-row"><span class="friend-avatar">JD</span><span><b>Jamie Diaz</b><small>5 workouts this week · 82.5 kg bench</small></span><button class="invite-button" data-friend="Jamie Diaz">Invite</button></div><div class="friend-row"><span class="friend-avatar coral-avatar">SK</span><span><b>Sam Kim</b><small>3 workouts this week · 60 kg squat</small></span><button class="invite-button" data-friend="Sam Kim">Invite</button></div></div><div class="section-heading compact"><div><p class="eyebrow">ACTIVITY FEED</p><h2>Latest from your crew</h2></div></div><div class="feed-list"><article class="feed-item"><span class="friend-avatar">JD</span><div><b>Jamie Diaz hit a new personal best</b><p>Bench press · 82.5 kg</p><small>24 minutes ago</small></div><span class="feed-badge">PB</span></article><article class="feed-item"><span class="friend-avatar coral-avatar">SK</span><div><b>Sam completed a push workout</b><p>7 exercises · 4,280 kg volume</p><small>2 hours ago</small></div><span class="feed-badge fire">✓</span></article></div><button class="primary-button full" id="invite-friend">Invite a friend to the gym <span>+</span></button></div>
+    <div class="tab-content" id="premium-tab"><div class="page-heading"><p class="eyebrow">FORGE PREMIUM</p><h2>Train with the full toolkit</h2><p>Everything you need to understand your routine and stay consistent.</p></div><div class="premium-tabs" id="premium-tabs"><button type="button" class="premium-tab active" data-ptab="overview">Overview</button><button type="button" class="premium-tab" data-ptab="benefits">Benefits</button><button type="button" class="premium-tab" data-ptab="pricing">Pricing</button><button type="button" class="premium-tab" data-ptab="nutrition">Nutrition</button><button type="button" class="premium-tab" data-ptab="extras">Extras</button></div><div class="premium-tab-content active" id="premium-overview"><section class="premium-card"><p class="eyebrow light">MEMBERSHIP</p><h3>Forge Premium</h3><p>Unlock every advanced tracking and customization feature with no ads.</p><button type="button" class="primary-button" data-ptab-link="pricing">See plans and pricing <span>→</span></button></section><div class="section-heading compact"><div><p class="eyebrow">WHY UPGRADE</p><h2>Built for consistency</h2></div></div><div class="premium-features"><div class="premium-feature"><b>Advanced tracking</b><span>Every set, rep and PR recorded automatically</span></div><div class="premium-feature"><b>Guided workouts</b><span>Runner mode with a live set-by-set timer</span></div><div class="premium-feature"><b>Detailed reports</b><span>A full breakdown after every session</span></div><div class="premium-feature"><b>No ads, ever</b><span>Stay focused on training, not banners</span></div></div></div><div class="premium-tab-content" id="premium-benefits"><div class="section-heading compact"><div><p class="eyebrow">EVERYTHING INCLUDED</p><h2>Premium benefits</h2></div></div><div class="benefit-list"><article class="benefit-row"><span class="benefit-icon">📈</span><div><b>Advanced workout tracking</b><p>Log every set, rep, weight and volume, and get notified the moment you hit a new personal record.</p></div></article><article class="benefit-row"><span class="benefit-icon">⏱️</span><div><b>Guided workout runner</b><p>A live per-set timer walks you through every exercise in your program and restarts automatically as you move from set to set.</p></div></article><article class="benefit-row"><span class="benefit-icon">📊</span><div><b>Detailed session reports</b><p>The moment you finish a workout, see total time, reps and sets broken down exercise by exercise.</p></div></article><article class="benefit-row"><span class="benefit-icon">🍽️</span><div><b>Meals and calories</b><p>Track meals and daily calorie intake alongside your training, all in one place.</p></div></article><article class="benefit-row"><span class="benefit-icon">💧</span><div><b>Water and steps</b><p>Log hydration and daily movement so recovery gets the same attention as lifting.</p></div></article><article class="benefit-row"><span class="benefit-icon">🗓️</span><div><b>Monthly reports</b><p>A clear, shareable summary of your training and habits, generated automatically each month.</p></div></article><article class="benefit-row"><span class="benefit-icon">🎨</span><div><b>Premium themes</b><p>Personalize your profile with regular and neon color styles.</p></div></article><article class="benefit-row"><span class="benefit-icon">🚫</span><div><b>Ad-free experience</b><p>Focus on training without advertising distractions, ever.</p></div></article><article class="benefit-row"><span class="benefit-icon">☁️</span><div><b>Cloud-ready progress</b><p>Keep your history, goals and profile organized and ready to sync.</p></div></article></div></div><div class="premium-tab-content" id="premium-pricing"><div class="section-heading compact"><div><p class="eyebrow">CHOOSE YOUR PLAN</p><h2>Simple pricing</h2></div></div><section class="premium-card"><div class="billing-toggle"><button class="billing-option active" data-billing="monthly">Monthly <strong>€5.99</strong><small>/ month</small></button><button class="billing-option" data-billing="yearly">Yearly <strong>€64.69</strong><small>/ year · save 10%</small></button></div><button class="primary-button" id="subscribe-button">Subscribe for €5.99 / month <span>→</span></button></section><p class="pricing-note">Cancel anytime from your profile. Yearly billing saves 10% compared to paying monthly (€71.88 at the monthly rate). Demo checkout only — connect Stripe or App Store billing before taking real payments.</p></div><div class="premium-tab-content" id="premium-nutrition"><div class="premium-lock" id="nutrition-lock"><span class="lock-icon">🔒</span><b>Premium feature</b><p>Personalized nutrition guidance and full recipes are part of Forge Premium. Subscribe to unlock meal plans matched to your training goal.</p><button type="button" class="primary-button" data-ptab-link="pricing">See plans and pricing <span>→</span></button></div><div id="nutrition-content" class="locked"><div class="section-heading compact"><div><p class="eyebrow">YOUR GOAL</p><h2>Eat for your target</h2></div></div><div class="goal-picker" id="nutrition-goal-picker"></div><div class="nutrition-summary" id="nutrition-summary"></div><div class="section-heading compact"><div><p class="eyebrow">RECIPES FOR YOU</p><h2>Meals that match</h2></div></div><div class="filter-row" id="meal-filter-row"></div><div class="recipe-list" id="recipe-list"></div></div></div><div class="premium-tab-content" id="premium-extras"><div class="section-heading compact"><div><p class="eyebrow">DAILY TRACKING</p><h2>Fuel and movement</h2></div></div><div class="tracker-grid"><div class="tracker-card"><label for="meal-input">MEALS</label><input id="meal-input" type="number" min="0" placeholder="0" /><small>meals today</small></div><div class="tracker-card"><label for="water-input">WATER</label><input id="water-input" type="number" min="0" placeholder="0" /><small>glasses today</small></div><div class="tracker-card"><label for="calorie-input">CALORIES</label><input id="calorie-input" type="number" min="0" placeholder="0" /><small>kcal consumed</small></div><div class="tracker-card"><label for="steps-input">STEPS</label><input id="steps-input" type="number" min="0" placeholder="0" /><small>steps today</small></div></div><button class="secondary-button full" id="save-trackers">Save today's tracking</button><div class="section-heading compact"><div><p class="eyebrow">PROFILE STYLE</p><h2>Choose your theme</h2></div></div><div class="theme-group"><span>Regular</span><div class="theme-row"><button class="theme-swatch active" data-theme="lime" style="background:#d9ef54" aria-label="Lime regular theme"></button><button class="theme-swatch" data-theme="coral" style="background:#ff765f" aria-label="Coral regular theme"></button><button class="theme-swatch" data-theme="blue" style="background:#76b6d7" aria-label="Blue regular theme"></button><button class="theme-swatch" data-theme="mint" style="background:#72d6b0" aria-label="Mint regular theme"></button><button class="theme-swatch" data-theme="orange" style="background:#ffad5c" aria-label="Orange regular theme"></button></div></div><div class="theme-group"><span>Neon</span><div class="theme-row"><button class="theme-swatch" data-theme="neon-pink" style="background:#ff2bd6" aria-label="Neon pink theme"></button><button class="theme-swatch" data-theme="neon-green" style="background:#7dff00" aria-label="Neon green theme"></button><button class="theme-swatch" data-theme="neon-blue" style="background:#00e5ff" aria-label="Neon blue theme"></button><button class="theme-swatch" data-theme="neon-yellow" style="background:#faff00" aria-label="Neon yellow theme"></button></div></div><div class="report-card" id="monthly-report"><b>September progress report</b><span>Save your daily tracking to generate this month's summary.</span></div><button class="primary-button full" id="generate-report">Generate monthly report <span>↗</span></button></div></div><div class="tab-content" id="profile-tab"><div class="profile-heading"><button class="large-avatar">AC</button><p class="eyebrow">YOUR PROFILE</p><h2 id="profile-name">Alex Carter</h2><p>Training since January 2024</p></div><div class="profile-stats"><div><b id="profile-workouts-count">147</b><span>Workouts</span></div><div><b>12</b><span>Day streak</span></div><div><b>8</b><span>Personal bests</span></div></div><div class="details-card"><div><span>HEIGHT</span><b id="profile-height">178 cm</b></div><div><span>WEIGHT</span><b id="profile-weight">76 kg</b></div><div><span>FOCUS</span><b id="profile-focus">Strength</b></div><div><span>GENDER</span><b id="profile-gender">—</b></div><div><span>WEEKLY TARGET</span><b>4 sessions</b></div></div><button class="secondary-button" id="edit-profile">Edit profile <span>↗</span></button><button class="auth-switch sign-out" id="sign-out">Sign out</button></div>
+
+    <nav class="bottom-nav"><button class="nav-item active" data-tab="home"><span>⌂</span>Home</button><button class="nav-item" data-tab="workout"><span>＋</span>Workout</button><button class="nav-item" data-tab="calendar"><span>▦</span>Calendar</button><button class="nav-item" data-tab="menu"><span>☰</span>Menu</button></nav>
+  </main>
+  <section class="profile-page" id="profile-page" aria-hidden="true">
+    <div class="brand-header"><svg class="brand-logo" viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><rect x="4" y="20" width="9" height="24" rx="3" fill="currentColor"/><rect x="51" y="20" width="9" height="24" rx="3" fill="currentColor"/><rect x="15" y="25" width="6" height="14" rx="2" fill="currentColor"/><rect x="43" y="25" width="6" height="14" rx="2" fill="currentColor"/><rect x="21" y="29" width="22" height="6" rx="2" fill="var(--coral)"/></svg><span class="brand-word">FORGE</span></div>
+    <div class="profile-page-top"><button class="back-button" id="close-profile">←</button><p class="eyebrow">YOUR PROFILE</p><button class="icon-button" id="profile-settings" aria-label="Edit profile">↗</button></div>
+    <div class="profile-heading"><button class="large-avatar" id="profile-page-avatar">AC</button><p class="eyebrow">PERSONAL DETAILS</p><h2 id="profile-page-name">Alex Carter</h2><p>Training since January 2024</p></div>
+    <div class="profile-stats"><div><b id="profile-page-workouts-count">147</b><span>Workouts</span></div><div><b>12</b><span>Day streak</span></div><div><b>8</b><span>Personal bests</span></div></div>
+    <div class="details-card"><div><span>HEIGHT</span><b id="profile-page-height">178 cm</b></div><div><span>WEIGHT</span><b id="profile-page-weight">76 kg</b></div><div><span>FOCUS</span><b id="profile-page-focus">Strength</b></div><div><span>GENDER</span><b id="profile-page-gender">—</b></div><div><span>WEEKLY TARGET</span><b id="profile-page-target">4 sessions</b></div></div>
+    <button class="secondary-button" id="profile-page-edit">Edit profile <span>↗</span></button><button class="auth-switch sign-out" id="profile-page-sign-out">Sign out</button>
+  </section>
+  <div class="modal-backdrop" id="modal-backdrop"><section class="modal-panel" id="goal-modal"><button class="modal-close">×</button><p class="eyebrow">NEW GOAL</p><h2>What are you working toward?</h2><form id="goal-form"><label>Goal name<input id="goal-name" required placeholder="Run 5 km without stopping" /></label><label>Target date<input id="goal-date" type="date" required /></label><button class="primary-button" type="submit">Create goal <span>-></span></button></form></section><section class="modal-panel" id="profile-modal"><button class="modal-close">×</button><p class="eyebrow">EDIT PROFILE</p><h2>Keep your details current</h2><form id="profile-form"><label>Name<input id="edit-name" required /></label><label>Height (cm)<input id="edit-height" type="number" required /></label><label>Weight (kg)<input id="edit-weight" type="number" required /></label><label>Training focus<input id="edit-focus" required /></label><label>Gender<select id="edit-gender"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other / prefer not to say</option></select></label><label>Weekly gym target<input id="edit-target" type="number" min="1" max="14" required /></label><button class="primary-button" type="submit">Save profile <span>✓</span></button></form></section><section class="modal-panel" id="library-modal"><button class="modal-close">×</button><p class="eyebrow">EXERCISE LIBRARY</p><h2>Add to your program</h2><div class="filter-row" id="library-filter-row"></div><div class="library-list" id="library-list"></div><button class="secondary-button full" type="button" id="show-custom-form">+ Can't find it? Add a custom exercise</button><form id="program-form" class="custom-exercise-form hidden"><label>Exercise name<input id="program-name" required placeholder="Cable fly" /></label><label>Muscle group<input id="program-muscle" required placeholder="Chest" /></label><div class="form-grid"><label>Sets<input id="program-sets" type="number" min="1" max="10" value="3" required /></label><label>Reps<input id="program-reps" type="number" min="1" max="50" value="10" required /></label></div><label>Rest between sets (seconds)<input id="program-rest" type="number" min="0" max="300" step="15" value="90" required /></label><button class="primary-button" type="submit">Add exercise <span>+</span></button></form></section><section class="modal-panel" id="reminder-modal"><button class="modal-close">×</button><p class="eyebrow">GYM REMINDER</p><h2>Choose your reminder time</h2><form id="reminder-form"><label>Days<input id="reminder-days" value="Monday, Wednesday & Friday" required /></label><label>Time<input id="reminder-time" type="time" value="18:00" required /></label><button class="primary-button" type="submit">Save reminder <span>✓</span></button></form></section><section class="modal-panel" id="invite-modal"><button class="modal-close">×</button><p class="eyebrow">GYM INVITE</p><h2>Bring someone with you</h2><form id="invite-form"><label>Friend's name<input id="invite-name" required placeholder="Jamie Diaz" /></label><label>Email or phone<input id="invite-contact" required placeholder="friend@example.com" /></label><label>Gym day<input id="invite-day" type="date" required /></label><button class="primary-button" type="submit">Send invitation <span>-></span></button></form></section><section class="modal-panel" id="day-modal"><button class="modal-close">×</button><p class="eyebrow" id="day-modal-eyebrow">GYM DAY</p><h2 id="day-modal-title">Set your session time</h2><form id="day-form"><label>Start time<input id="day-time" type="time" value="18:00" required /></label><label>Session length (minutes)<input id="day-duration" type="number" min="10" max="240" step="5" value="60" required /></label><label>Note (optional)<input id="day-note" placeholder="Leg day with Sam" /></label><button class="primary-button" type="submit">Save day <span>✓</span></button></form><button type="button" class="secondary-button full" id="day-mark-done">Mark as completed</button><button type="button" class="text-button" id="day-clear" style="margin-top:14px;color:var(--coral)">Clear this day</button></section><section class="modal-panel builder-modal" id="builder-modal"><button class="modal-close">×</button><p class="eyebrow">NEW WORKOUT</p><h2 id="builder-title">Build your session</h2><label>Workout name<input id="builder-name" placeholder="Push day" /></label><div class="section-heading compact"><div><p class="eyebrow">EXERCISES</p><h2 id="builder-count">0 added</h2></div><button type="button" class="text-button" id="builder-add">Add <span>+</span></button></div><div class="builder-list" id="builder-list"></div><button type="button" class="secondary-button full" id="builder-add-2">＋ Add an exercise</button><button type="button" class="primary-button full" id="builder-start">Start workout <span>→</span></button><button type="button" class="secondary-button full" id="builder-save">Save without starting</button></section><section class="modal-panel recipe-modal" id="recipe-modal"><button class="modal-close">×</button><p class="eyebrow" id="recipe-eyebrow">RECIPE</p><h2 id="recipe-title">Recipe</h2><div id="recipe-body"></div></section><section class="modal-panel" id="payment-modal"><button class="modal-close">×</button><p class="eyebrow">SECURE CHECKOUT</p><h2>Start Forge Premium</h2><p class="payment-summary" id="payment-summary">€5.99 / month</p><form id="payment-form"><label>Cardholder name<input id="card-name" required autocomplete="cc-name" placeholder="Alex Carter" /></label><label>Card number<input id="card-number" required autocomplete="cc-number" inputmode="numeric" minlength="12" maxlength="19" placeholder="1234 5678 9012 3456" /></label><div class="form-grid"><label>Expiry date<input id="card-expiry" required autocomplete="cc-exp" placeholder="MM/YY" maxlength="5" /></label><label>CVC<input id="card-cvc" required autocomplete="cc-csc" inputmode="numeric" minlength="3" maxlength="4" placeholder="123" /></label></div><button class="primary-button" type="submit">Pay and activate <span>✓</span></button><small class="secure-note">Demo checkout: connect Stripe or App Store billing before taking real payments.</small></form></section></div>
+  <div class="toast" id="toast">Set logged. Nice work.</div>
+  <div class="rest-timer-bar" id="rest-timer-bar"><div class="rest-fill"></div><div class="rest-content"><div><span class="rest-label">Rest</span><span class="rest-time">01:30</span></div><div class="rest-actions"><button type="button" class="rest-add">+15s</button><button type="button" class="rest-skip">Skip</button></div></div></div>
+  <script>const tabs = document.querySelectorAll('[data-tab]');
+const navItems = document.querySelectorAll('.nav-item');
+const contents = document.querySelectorAll('.tab-content');
+const toast = document.querySelector('#toast');
+const authScreen = document.querySelector('#auth-screen');
+let isSignUp = false;
+
+function openTab(name) { if (name === 'menu') return; contents.forEach((content) => content.classList.toggle('active', content.id === `${name}-tab`)); navItems.forEach((item) => item.classList.toggle('active', item.dataset.tab === name)); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function showToast(message) { toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2200); }
+function showModal(id) { document.querySelector('#modal-backdrop').classList.add('open'); document.querySelectorAll('.modal-panel').forEach((panel) => panel.classList.toggle('open', panel.id === id)); }
+function closeModal() { document.querySelector('#modal-backdrop').classList.remove('open'); }
+
+// The runner owns one guided session from start to report. It deliberately keeps report data separate per account.
+document.querySelector('#modal-backdrop').insertAdjacentHTML('afterbegin', '<section class="modal-panel runner-modal" id="runner-modal"><div class="runner-head"><div><p class="eyebrow">ACTIVE WORKOUT</p><h2 id="runner-title">Push strength</h2></div><button class="modal-close">×</button></div><div class="runner-meta"><span id="runner-progress">Exercise 1 of 1</span><div class="timer-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-fill" id="runner-ring" cx="60" cy="60" r="52"/></svg><strong id="runner-timer">00:00</strong></div></div><div id="hydration-banner" class="hydration-banner"><span class="hydration-icon">💧</span><div><b>Halfway there — drink some water</b><span>A few sips now keeps your strength up for the rest of the session.</span></div><button type="button" class="hydration-close" aria-label="Dismiss">×</button></div><div id="runner-exercise-list"></div><p class="runner-status" id="runner-status"></p><button class="secondary-button full" id="runner-finish">Finish workout</button></section><section class="modal-panel report-modal" id="report-modal"><button class="modal-close">×</button><p class="eyebrow">WORKOUT REPORT</p><h2>Session complete</h2><div class="report-summary" id="report-summary"></div><button class="primary-button full" id="report-done">Done</button></section><section class="modal-panel reports-modal" id="reports-modal"><button class="modal-close">×</button><p class="eyebrow">SAVED REPORTS</p><h2>Your workout history</h2><div id="reports-list"></div></section>');
+document.body.insertAdjacentHTML('beforeend', '<div class="menu-sheet" id="menu-sheet"><button class="menu-close" id="menu-close">×</button><p class="eyebrow">FORGE MENU</p><h2>More sections</h2><div class="menu-grid"><button data-menu-tab="social">♧ <span>Social</span></button><button data-menu-tab="goals">◎ <span>Goals</span></button><button data-menu-tab="premium">◆ <span>Premium</span></button><button id="open-reports">▤ <span>Reports</span></button><button data-menu-tab="profile">● <span>Profile</span></button></div></div>');
+const menuSheet = document.querySelector('#menu-sheet');
+function openMenu() { menuSheet.classList.add('open'); }
+function closeMenu() { menuSheet.classList.remove('open'); }
+document.querySelector('#menu-close').addEventListener('click', closeMenu);
+document.querySelectorAll('[data-menu-tab]').forEach((button) => button.addEventListener('click', () => { closeMenu(); openTab(button.dataset.menuTab); }));
+document.querySelector('#open-reports').addEventListener('click', () => { closeMenu(); renderReports(); showModal('reports-modal'); });
+document.querySelector('.nav-item[data-tab="menu"]').addEventListener('click', openMenu);
+const languageCatalog = {
+	en: { language: 'Language', start: 'Start workout', finish: 'Finish workout', menu: 'More sections', reports: 'Your workout history', translations: {} },
+	es: { language: 'Idioma', start: 'Iniciar entrenamiento', finish: 'Finalizar entrenamiento', menu: 'Más secciones', reports: 'Historial de entrenamientos', translations: { 'YOUR TRAINING, MEASURED': 'TU ENTRENAMIENTO, MEDIDO', 'Build a stronger': 'Construye una rutina', 'routine.': 'más fuerte.', 'Email': 'Correo electrónico', 'Password': 'Contraseña', 'Sign in': 'Iniciar sesión', 'New here? Create an account': '¿Nuevo aquí? Crea una cuenta', 'CURRENT STREAK': 'RACHA ACTUAL', 'days': 'días', 'TODAY\'S PLAN': 'PLAN DE HOY', 'Edit plan': 'Editar plan', 'READY TO TRAIN': 'LISTO PARA ENTRENAR', 'Start workout': 'Iniciar entrenamiento', 'YOUR NUMBERS': 'TUS NÚMEROS', 'Progress at a glance': 'Progreso de un vistazo', 'TRAINING LOG': 'REGISTRO DE ENTRENAMIENTO', 'Build your session': 'Construye tu sesión', 'PROGRESS': 'PROGRESO', 'Proof of your work': 'La prueba de tu trabajo', 'PERSONAL GOALS': 'OBJETIVOS PERSONALES', 'Make it measurable': 'Hazlo medible', 'TRAINING CALENDAR': 'CALENDARIO DE ENTRENAMIENTO', 'Plan your gym days': 'Planifica tus días de gimnasio', 'YOUR TRAINING CREW': 'TU EQUIPO DE ENTRENAMIENTO', 'Train together': 'Entrena en equipo', 'FORGE PREMIUM': 'FORGE PREMIUM', 'YOUR PROFILE': 'TU PERFIL', 'Home': 'Inicio', 'Workout': 'Entrenamiento', 'Calendar': 'Calendario', 'Menu': 'Menú', 'Social': 'Social', 'Goals': 'Objetivos', 'Premium': 'Premium', 'Reports': 'Informes', 'Profile': 'Perfil' } },
+	fr: { language: 'Langue', start: "Commencer l'entraînement", finish: "Terminer l'entraînement", menu: 'Autres sections', reports: 'Historique des entraînements', translations: { 'YOUR TRAINING, MEASURED': 'VOTRE ENTRAÎNEMENT, MESURÉ', 'Build a stronger': 'Construisez une routine', 'routine.': 'plus forte.', 'Email': 'E-mail', 'Password': 'Mot de passe', 'Sign in': 'Se connecter', 'New here? Create an account': 'Nouveau ici ? Créer un compte', 'CURRENT STREAK': 'SÉRIE ACTUELLE', 'days': 'jours', 'TODAY\'S PLAN': "PLAN D'AUJOURD'HUI", 'Edit plan': 'Modifier le plan', 'READY TO TRAIN': 'PRÊT À S’ENTRAÎNER', 'YOUR NUMBERS': 'VOS CHIFFRES', 'Progress at a glance': 'Progrès en un coup d’œil', 'TRAINING LOG': 'JOURNAL D’ENTRAÎNEMENT', 'Build your session': 'Construisez votre séance', 'PROGRESS': 'PROGRÈS', 'Proof of your work': 'La preuve de votre travail', 'PERSONAL GOALS': 'OBJECTIFS PERSONNELS', 'Make it measurable': 'Rendez-le mesurable', 'TRAINING CALENDAR': 'CALENDRIER D’ENTRAÎNEMENT', 'Plan your gym days': 'Planifiez vos jours de sport', 'YOUR TRAINING CREW': 'VOTRE ÉQUIPE', 'Train together': 'Entraînez-vous ensemble', 'YOUR PROFILE': 'VOTRE PROFIL', 'Home': 'Accueil', 'Workout': 'Entraînement', 'Calendar': 'Calendrier', 'Menu': 'Menu', 'Social': 'Social', 'Goals': 'Objectifs', 'Premium': 'Premium', 'Reports': 'Rapports', 'Profile': 'Profil' } },
+	de: { language: 'Sprache', start: 'Training starten', finish: 'Training beenden', menu: 'Weitere Bereiche', reports: 'Trainingsverlauf', translations: { 'YOUR TRAINING, MEASURED': 'DEIN TRAINING, GEMESSEN', 'Build a stronger': 'Baue eine stärkere', 'routine.': 'Routine auf.', 'Email': 'E-Mail', 'Password': 'Passwort', 'Sign in': 'Anmelden', 'New here? Create an account': 'Neu hier? Konto erstellen', 'CURRENT STREAK': 'AKTUELLE SERIE', 'days': 'Tage', 'TODAY\'S PLAN': 'HEUTIGER PLAN', 'Edit plan': 'Plan bearbeiten', 'READY TO TRAIN': 'BEREIT ZUM TRAINING', 'YOUR NUMBERS': 'DEINE ZAHLEN', 'Progress at a glance': 'Fortschritt auf einen Blick', 'TRAINING LOG': 'TRAININGSPROTOKOLL', 'Build your session': 'Baue deine Einheit', 'PROGRESS': 'FORTSCHRITT', 'Proof of your work': 'Der Beweis deiner Arbeit', 'PERSONAL GOALS': 'PERSÖNLICHE ZIELE', 'Make it measurable': 'Mach es messbar', 'TRAINING CALENDAR': 'TRAININGSKALENDER', 'Plan your gym days': 'Plane deine Trainingstage', 'YOUR TRAINING CREW': 'DEIN TRAININGSTEAM', 'Train together': 'Gemeinsam trainieren', 'YOUR PROFILE': 'DEIN PROFIL', 'Home': 'Start', 'Workout': 'Training', 'Calendar': 'Kalender', 'Menu': 'Menü', 'Social': 'Soziales', 'Goals': 'Ziele', 'Premium': 'Premium', 'Reports': 'Berichte', 'Profile': 'Profil' } },
+	pt: { language: 'Idioma', start: 'Começar treino', finish: 'Terminar treino', menu: 'Mais secções', reports: 'Histórico de treinos', translations: { 'YOUR TRAINING, MEASURED': 'O TEU TREINO, MEDIDO', 'Build a stronger': 'Constrói uma rotina', 'routine.': 'mais forte.', 'Email': 'E-mail', 'Password': 'Palavra-passe', 'Sign in': 'Iniciar sessão', 'New here? Create an account': 'Novo aqui? Criar uma conta', 'CURRENT STREAK': 'SEQUÊNCIA ATUAL', 'days': 'dias', 'TODAY\'S PLAN': 'PLANO DE HOJE', 'Edit plan': 'Editar plano', 'READY TO TRAIN': 'PRONTO PARA TREINAR', 'YOUR NUMBERS': 'OS TEUS NÚMEROS', 'Progress at a glance': 'Progresso num relance', 'TRAINING LOG': 'REGISTO DE TREINO', 'Build your session': 'Constrói a tua sessão', 'PROGRESS': 'PROGRESSO', 'Proof of your work': 'A prova do teu trabalho', 'PERSONAL GOALS': 'OBJETIVOS PESSOAIS', 'Make it measurable': 'Torna-o mensurável', 'TRAINING CALENDAR': 'CALENDÁRIO DE TREINO', 'Plan your gym days': 'Planeia os teus dias', 'YOUR TRAINING CREW': 'A TUA EQUIPA', 'Train together': 'Treinem juntos', 'YOUR PROFILE': 'O TEU PERFIL', 'Home': 'Início', 'Workout': 'Treino', 'Calendar': 'Calendário', 'Menu': 'Menu', 'Social': 'Social', 'Goals': 'Objetivos', 'Premium': 'Premium', 'Reports': 'Relatórios', 'Profile': 'Perfil' } },
+	el: { language: 'Γλώσσα', start: 'Έναρξη προπόνησης', finish: 'Ολοκλήρωση προπόνησης', menu: 'Περισσότερες ενότητες', reports: 'Ιστορικό προπονήσεων', translations: { 'YOUR TRAINING, MEASURED': 'Η ΠΡΟΠΟΝΗΣΗ ΣΟΥ, ΜΕΤΡΗΜΕΝΗ', 'Build a stronger': 'Χτίσε μια πιο δυνατή', 'routine.': 'ρουτίνα.', 'Email': 'Email', 'Password': 'Κωδικός', 'Sign in': 'Σύνδεση', 'New here? Create an account': 'Νέος εδώ; Δημιούργησε λογαριασμό', 'CURRENT STREAK': 'ΤΡΕΧΟΝ ΣΕΡΙ', 'days': 'ημέρες', 'TODAY\'S PLAN': 'ΣΗΜΕΡΙΝΟ ΠΛΑΝΟ', 'Edit plan': 'Επεξεργασία πλάνου', 'READY TO TRAIN': 'ΕΤΟΙΜΟΣ ΓΙΑ ΠΡΟΠΟΝΗΣΗ', 'YOUR NUMBERS': 'ΟΙ ΑΡΙΘΜΟΙ ΣΟΥ', 'Progress at a glance': 'Η πρόοδος με μια ματιά', 'TRAINING LOG': 'ΗΜΕΡΟΛΟΓΙΟ ΠΡΟΠΟΝΗΣΗΣ', 'Build your session': 'Χτίσε τη συνεδρία σου', 'PROGRESS': 'ΠΡΟΟΔΟΣ', 'Proof of your work': 'Απόδειξη της δουλειάς σου', 'PERSONAL GOALS': 'ΠΡΟΣΩΠΙΚΟΙ ΣΤΟΧΟΙ', 'Make it measurable': 'Κάνε το μετρήσιμο', 'TRAINING CALENDAR': 'ΗΜΕΡΟΛΟΓΙΟ ΠΡΟΠΟΝΗΣΕΩΝ', 'Plan your gym days': 'Σχεδίασε τις ημέρες γυμναστικής', 'YOUR TRAINING CREW': 'Η ΟΜΑΔΑ ΠΡΟΠΟΝΗΣΗΣ ΣΟΥ', 'Train together': 'Προπονηθείτε μαζί', 'YOUR PROFILE': 'ΤΟ ΠΡΟΦΙΛ ΣΟΥ', 'Home': 'Αρχική', 'Workout': 'Προπόνηση', 'Calendar': 'Ημερολόγιο', 'Menu': 'Μενού', 'Social': 'Κοινωνικά', 'Goals': 'Στόχοι', 'Premium': 'Premium', 'Reports': 'Αναφορές', 'Profile': 'Προφίλ', 'FORGE PREMIUM': 'FORGE PREMIUM', 'Train with the full toolkit': 'Προπονήσου με όλα τα εργαλεία', 'Overview': 'Επισκόπηση', 'Benefits': 'Οφέλη', 'Pricing': 'Τιμολόγηση', 'Extras': 'Επιπλέον', 'MEMBERSHIP': 'ΣΥΝΔΡΟΜΗ', 'Forge Premium': 'Forge Premium', 'Unlock every advanced tracking and customization feature with no ads.': 'Ξεκλείδωσε όλες τις προηγμένες λειτουργίες παρακολούθησης και προσαρμογής, χωρίς διαφημίσεις.', 'See plans and pricing': 'Δες τα πλάνα και τις τιμές', 'WHY UPGRADE': 'ΓΙΑΤΙ ΝΑ ΑΝΑΒΑΘΜΙΣΕΙΣ', 'Built for consistency': 'Φτιαγμένο για συνέπεια', 'EVERYTHING INCLUDED': 'ΟΛΑ ΠΕΡΙΛΑΜΒΑΝΟΝΤΑΙ', 'Premium benefits': 'Οφέλη συνδρομής', 'CHOOSE YOUR PLAN': 'ΕΠΙΛΕΞΕ ΤΟ ΠΛΑΝΟ ΣΟΥ', 'Simple pricing': 'Απλή τιμολόγηση', 'DAILY TRACKING': 'ΚΑΘΗΜΕΡΙΝΗ ΠΑΡΑΚΟΛΟΥΘΗΣΗ', 'Fuel and movement': 'Διατροφή και κίνηση', 'PROFILE STYLE': 'ΣΤΥΛ ΠΡΟΦΙΛ', 'Choose your theme': 'Επίλεξε το θέμα σου' } },
+	ar: { language: 'اللغة', start: 'ابدأ التمرين', finish: 'إنهاء التمرين', menu: 'أقسام أخرى', reports: 'سجل التمارين', translations: { 'YOUR TRAINING, MEASURED': 'تدريبك، بالأرقام', 'Build a stronger': 'ابنِ روتينًا', 'routine.': 'أقوى.', 'Email': 'البريد الإلكتروني', 'Password': 'كلمة المرور', 'Sign in': 'تسجيل الدخول', 'New here? Create an account': 'جديد هنا؟ أنشئ حسابًا', 'CURRENT STREAK': 'السلسلة الحالية', 'days': 'أيام', 'TODAY\'S PLAN': 'خطة اليوم', 'Edit plan': 'تعديل الخطة', 'READY TO TRAIN': 'مستعد للتمرين', 'YOUR NUMBERS': 'أرقامك', 'Progress at a glance': 'التقدم في لمحة', 'TRAINING LOG': 'سجل التدريب', 'Build your session': 'ابنِ جلستك', 'PROGRESS': 'التقدم', 'Proof of your work': 'دليل عملك', 'PERSONAL GOALS': 'الأهداف الشخصية', 'Make it measurable': 'اجعلها قابلة للقياس', 'TRAINING CALENDAR': 'تقويم التدريب', 'Plan your gym days': 'خطط لأيام النادي', 'YOUR TRAINING CREW': 'فريق تدريبك', 'Train together': 'تدربوا معًا', 'YOUR PROFILE': 'ملفك الشخصي', 'Home': 'الرئيسية', 'Workout': 'التمرين', 'Calendar': 'التقويم', 'Menu': 'القائمة', 'Social': 'اجتماعي', 'Goals': 'الأهداف', 'Premium': 'بريميوم', 'Reports': 'التقارير', 'Profile': 'الملف الشخصي' } }
+};
+const translatedNodes = [];
+let currentLanguage = 'en';
+let runner = null;
+let runnerInterval = null;
+const runnerWords = { es: { sets: 'series', reps: 'repeticiones', Set: 'Serie', of: 'de', Exercise: 'Ejercicio', 'Start exercise': 'Iniciar ejercicio', 'Complete set': 'Completar serie', 'Finish exercise': 'Finalizar ejercicio', started: 'comenzó', 'Complete each set when you finish it.': 'Completa cada serie cuando termines.', 'Exercise complete. Start the next exercise when ready.': 'Ejercicio completo. Inicia el siguiente cuando estés listo.', complete: 'completada', 'Timer continues until the next set.': 'El temporizador continúa hasta la siguiente serie.' }, fr: { sets: 'séries', reps: 'répétitions', Set: 'Série', of: 'sur', Exercise: 'Exercice', 'Start exercise': "Commencer l'exercice", 'Complete set': 'Terminer la série', 'Finish exercise': "Terminer l'exercice", started: 'a commencé', 'Complete each set when you finish it.': 'Terminez chaque série quand vous avez fini.', 'Exercise complete. Start the next exercise when ready.': 'Exercice terminé. Commencez le suivant quand vous êtes prêt.', complete: 'terminée', 'Timer continues until the next set.': 'Le minuteur continue jusqu’à la série suivante.' }, de: { sets: 'Sätze', reps: 'Wiederholungen', Set: 'Satz', of: 'von', Exercise: 'Übung', 'Start exercise': 'Übung starten', 'Complete set': 'Satz abschließen', 'Finish exercise': 'Übung beenden', started: 'gestartet', 'Complete each set when you finish it.': 'Schließe jeden Satz ab, wenn du fertig bist.', 'Exercise complete. Start the next exercise when ready.': 'Übung abgeschlossen. Starte die nächste Übung.', complete: 'abgeschlossen', 'Timer continues until the next set.': 'Der Timer läuft bis zum nächsten Satz weiter.' }, pt: { sets: 'séries', reps: 'repetições', Set: 'Série', of: 'de', Exercise: 'Exercício', 'Start exercise': 'Começar exercício', 'Complete set': 'Concluir série', 'Finish exercise': 'Terminar exercício', started: 'começou', 'Complete each set when you finish it.': 'Conclui cada série quando terminares.', 'Exercise complete. Start the next exercise when ready.': 'Exercício concluído. Começa o próximo quando estiveres pronto.', complete: 'concluída', 'Timer continues until the next set.': 'O temporizador continua até à série seguinte.' }, el: { sets: 'σετ', reps: 'επαναλήψεις', Set: 'Σετ', of: 'από', Exercise: 'Άσκηση', 'Start exercise': 'Έναρξη άσκησης', 'Complete set': 'Ολοκλήρωση σετ', 'Finish exercise': 'Ολοκλήρωση άσκησης', started: 'ξεκίνησε', 'Complete each set when you finish it.': 'Ολοκλήρωσε κάθε σετ όταν τελειώνεις.', 'Exercise complete. Start the next exercise when ready.': 'Η άσκηση ολοκληρώθηκε. Ξεκίνα την επόμενη.', complete: 'ολοκληρώθηκε', 'Timer continues until the next set.': 'Ο χρονοδιακόπτης συνεχίζει μέχρι το επόμενο σετ.' }, ar: { sets: 'مجموعات', reps: 'تكرارات', Set: 'مجموعة', of: 'من', Exercise: 'تمرين', 'Start exercise': 'ابدأ التمرين', 'Complete set': 'أكمل المجموعة', 'Finish exercise': 'أنه التمرين', started: 'بدأ', 'Complete each set when you finish it.': 'أكمل كل مجموعة عند الانتهاء منها.', 'Exercise complete. Start the next exercise when ready.': 'اكتمل التمرين. ابدأ التمرين التالي عندما تكون مستعدًا.', complete: 'اكتملت', 'Timer continues until the next set.': 'يستمر المؤقت حتى المجموعة التالية.' } };
+function t(text) { return runnerWords[currentLanguage]?.[text] || languageCatalog[currentLanguage]?.translations[text] || text; }
+function translateStaticText(language) { translatedNodes.forEach(({ node, original }) => { node.nodeValue = original; }); translatedNodes.length = 0; const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); while (walker.nextNode()) { const node = walker.currentNode; const original = node.nodeValue.trim(); if (!original || original.length < 3 || node.parentElement.closest('script,style,select')) continue; if (languageCatalog[language]?.translations[original]) { translatedNodes.push({ node, original: node.nodeValue }); node.nodeValue = node.nodeValue.replace(original, languageCatalog[language].translations[original]); } } }
+function applyLanguage(language) { const copy = languageCatalog[language] || languageCatalog.en; currentLanguage = language; document.documentElement.lang = language; document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'; translateStaticText(language); const picker = document.querySelector('.language-picker'); if (picker) picker.firstChild.textContent = `${copy.language} `; const start = document.querySelector('#start-workout'); if (start) start.firstChild.textContent = `${copy.start} `; const finish = document.querySelector('#runner-finish'); if (finish) finish.firstChild.textContent = `${copy.finish} `; document.querySelector('#menu-sheet h2').textContent = copy.menu; document.querySelector('#reports-modal h2').textContent = copy.reports; localStorage.setItem('forge-language', language); document.querySelectorAll('#language-select, #app-language-select').forEach((select) => { select.value = language; }); if (runner) renderRunner(); }
+document.querySelectorAll('#language-select, #app-language-select').forEach((select) => select.addEventListener('change', (event) => applyLanguage(event.target.value)));
+applyLanguage(localStorage.getItem('forge-language') || 'en');
+
+function currentUserKey() { const email = localStorage.getItem('forge-session'); return (email || 'guest').toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
+function runnerExercises(workout) { return workout.exercises.map((exercise) => ({ ...exercise, completedSets: 0, started: false, running: false, finished: false, setStartedAt: null, totalTime: 0, setTimes: [] })); }
+function formatTime(seconds) { return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
+function runnerButtonLabel(exercise) {
+	if (exercise.running) return exercise.completedSets + 1 >= exercise.sets ? t('Finish exercise') : t('Complete set');
+	if (exercise.completedSets === 0) return t('Start exercise');
+	return `${t('Start set')} ${exercise.completedSets + 1}`;
+}
+const RING_LENGTH = 2 * Math.PI * 52;
+// The ring starts full and drains as the set runs, so effort reads at a glance.
+function setRingProgress(fraction) {
+	const ring = document.querySelector('#runner-ring');
+	if (!ring) return;
+	const clamped = Math.max(0, Math.min(1, fraction));
+	ring.style.strokeDasharray = String(RING_LENGTH);
+	ring.style.strokeDashoffset = String(RING_LENGTH * (1 - clamped));
+	ring.classList.toggle('overtime', clamped <= 0);
+}
+// A set has no fixed length, so we pace the ring against a sensible target: about four seconds per rep.
+function targetSetSeconds(exercise) { return Math.max(30, (Number(exercise.reps) || 10) * 4); }
+function stopRunnerClock() { clearInterval(runnerInterval); runnerInterval = null; }
+function startRunnerClock(exercise) {
+	stopRunnerClock();
+	exercise.setStartedAt = Date.now();
+	const target = targetSetSeconds(exercise);
+	document.querySelector('#runner-timer').textContent = '00:00';
+	setRingProgress(1);
+	runnerInterval = setInterval(() => {
+		const elapsed = Math.floor((Date.now() - exercise.setStartedAt) / 1000);
+		document.querySelector('#runner-timer').textContent = formatTime(elapsed);
+		setRingProgress(1 - elapsed / target);
+	}, 1000);
+}
+function renderRunner() {
+	const list = document.querySelector('#runner-exercise-list');
+	list.innerHTML = runner.exercises.map((exercise, index) => {
+		const isActive = index === runner.activeIndex && !exercise.finished;
+		const setLines = exercise.setTimes.map((time, setIndex) => `<span class="runner-set-chip">${t('Set')} ${setIndex + 1} · ${formatTime(time)}</span>`).join('');
+		const controls = isActive ? `<div class="runner-set-editor"><span>${t('Planned sets')}</span><button type="button" class="set-step" data-step="-1">−</button><b>${exercise.sets}</b><button type="button" class="set-step" data-step="1">+</button></div><div class="runner-controls"><span>${t('Set')} ${Math.min(exercise.completedSets + 1, exercise.sets)} ${t('of')} ${exercise.sets}</span><button type="button" class="primary-button runner-start">${runnerButtonLabel(exercise)} <span>→</span></button></div>` : '';
+		return `<article class="runner-exercise ${isActive ? 'active' : ''} ${exercise.finished ? 'finished' : ''}"><div class="runner-exercise-top"><span class="exercise-icon emoji">${categoryIcons[exercise.category] || '🏋️'}</span><div><b>${exercise.name}</b><small>${exercise.category} · ${exercise.sets} ${t('sets')} x ${exercise.reps} ${t('reps')}</small></div><span class="runner-set-count">${exercise.completedSets}/${exercise.sets}</span></div>${setLines ? `<div class="runner-set-log">${setLines}</div>` : ''}${controls}</article>`;
+	}).join('');
+	document.querySelector('#runner-progress').textContent = `${t('Exercise')} ${Math.min(runner.activeIndex + 1, runner.exercises.length)} ${t('of')} ${runner.exercises.length}`;
+	const activeExercise = runner.exercises[runner.activeIndex];
+	if (!activeExercise?.running) { document.querySelector('#runner-timer').textContent = '00:00'; setRingProgress(1); }
+	document.querySelector('#runner-finish').disabled = !runner.exercises.every((exercise) => exercise.finished);
+	list.querySelector('.runner-start')?.addEventListener('click', advanceRunner);
+	list.querySelectorAll('.set-step').forEach((button) => button.addEventListener('click', () => adjustRunnerSets(Number(button.dataset.step))));
+}
+function adjustRunnerSets(step) {
+	const exercise = runner.exercises[runner.activeIndex];
+	const next = exercise.sets + step;
+	if (next < Math.max(exercise.completedSets + (exercise.running ? 1 : 0), 1) || next > 12) return;
+	exercise.sets = next;
+	if (runner.workoutId) {
+		const list = loadWorkouts();
+		const workout = list.find((item) => item.id === runner.workoutId);
+		const source = workout?.exercises.find((item) => item.name === exercise.name);
+		if (source) { source.sets = next; saveWorkouts(list); renderWorkoutTemplates(); }
+	}
+	renderRunner();
+}
+function startWorkout(workout) {
+	if (!workout?.exercises?.length) { showToast(t('Add at least one exercise first.')); openTab('workout'); return; }
+	const chosen = runnerExercises(workout);
+	stopRunnerClock();
+	runner = { exercises: chosen, activeIndex: 0, startedAt: Date.now(), workoutId: workout.id, workoutName: workout.name };
+	document.querySelector('#runner-title').textContent = workout.name;
+	document.querySelector('#runner-status').textContent = t('Press start when you are ready for your first set.');
+	renderRunner();
+	showModal('runner-modal');
+}
+// ---- Hydration nudge: fires once, the moment the session passes its halfway mark ----
+function maybeHydrationReminder() {
+	if (!runner || runner.hydrationShown) return;
+	const planned = runner.exercises.reduce((sum, item) => sum + item.sets, 0);
+	const done = runner.exercises.reduce((sum, item) => sum + item.completedSets, 0);
+	if (!planned || done < planned / 2) return;
+	runner.hydrationShown = true;
+	const banner = document.querySelector('#hydration-banner');
+	banner.classList.add('show');
+	if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+	clearTimeout(runner.hydrationTimer);
+	runner.hydrationTimer = setTimeout(() => banner.classList.remove('show'), 9000);
+}
+
+function advanceRunner() {
+	const exercise = runner.exercises[runner.activeIndex];
+	if (!exercise.running) {
+		exercise.running = true;
+		exercise.started = true;
+		startRunnerClock(exercise);
+		document.querySelector('#runner-status').textContent = `${exercise.name} · ${t('Set')} ${exercise.completedSets + 1}. ${t('Press complete when the set is done.')}`;
+		renderRunner();
+		return;
+	}
+	const setTime = Math.max(0, Math.floor((Date.now() - exercise.setStartedAt) / 1000));
+	exercise.setTimes.push(setTime);
+	exercise.totalTime += setTime;
+	exercise.completedSets += 1;
+	exercise.running = false;
+	exercise.setStartedAt = null;
+	stopRunnerClock();
+	document.querySelector('#runner-timer').textContent = '00:00';
+	setRingProgress(1);
+	maybeHydrationReminder();
+	if (exercise.completedSets >= exercise.sets) {
+		exercise.finished = true;
+		const hasNext = runner.activeIndex < runner.exercises.length - 1;
+		if (hasNext) {
+			runner.activeIndex += 1;
+			document.querySelector('#runner-status').textContent = `${exercise.name} ${t('complete')}. ${t('Start the next exercise when ready.')}`;
+		} else {
+			document.querySelector('#runner-status').textContent = t('All exercises complete. Open your report.');
+			renderRunner();
+			finishGuidedWorkout();
+			return;
+		}
+	} else {
+		document.querySelector('#runner-status').textContent = `${t('Set')} ${exercise.completedSets} ${t('complete')} (${formatTime(setTime)}). ${t('Rest, then start the next set.')}`;
+	}
+	renderRunner();
+}
+function finishGuidedWorkout() {
+	stopRunnerClock();
+	const worked = runner.exercises.filter((exercise) => exercise.completedSets > 0);
+	const report = {
+		id: Date.now(),
+		date: new Date().toISOString(),
+		duration: runner.exercises.reduce((sum, exercise) => sum + exercise.totalTime, 0),
+		elapsed: Math.floor((Date.now() - runner.startedAt) / 1000),
+		exercises: worked.length,
+		sets: runner.exercises.reduce((sum, exercise) => sum + exercise.completedSets, 0),
+		reps: runner.exercises.reduce((sum, exercise) => sum + exercise.completedSets * exercise.reps, 0),
+		exerciseStats: worked.map((exercise) => ({ name: exercise.name, category: exercise.category, planned: exercise.sets, sets: exercise.completedSets, reps: exercise.completedSets * exercise.reps, time: exercise.totalTime, best: Math.min(...exercise.setTimes), average: Math.round(exercise.totalTime / exercise.setTimes.length), setTimes: exercise.setTimes })),
+		details: worked.map((exercise) => `${exercise.name}: ${exercise.completedSets}/${exercise.sets} sets`).join(' · '),
+	};
+	const key = `forge-reports-${currentUserKey()}`;
+	const reports = JSON.parse(localStorage.getItem(key) || '[]');
+	reports.unshift(report);
+	localStorage.setItem(key, JSON.stringify(reports.slice(0, 50)));
+	const count = Number(localStorage.getItem('forge-workout-count') || '14') + 1;
+	localStorage.setItem('forge-workout-count', String(count));
+	document.querySelectorAll('#workouts-count, #profile-workouts-count, #profile-page-workouts-count').forEach((element) => { element.textContent = count; });
+	document.querySelector('#report-summary').innerHTML = `<div><b>${formatTime(report.elapsed)}</b><span>${t('Session length')}</span></div><div><b>${report.reps}</b><span>${t('Total reps')}</span></div><div><b>${report.sets}</b><span>${t('Sets finished')}</span></div><div class="report-exercise-stats">${report.exerciseStats.map((stat) => `<article><b>${categoryIcons[stat.category] || '🏋️'} ${stat.name}</b><span>${stat.sets}/${stat.planned} ${t('sets')} · ${stat.reps} ${t('reps')} · ${formatTime(stat.time)} ${t('working time')}</span><small>${stat.setTimes.map((time, index) => `${t('Set')} ${index + 1}: ${formatTime(time)}`).join(' · ')}</small><small>${t('Fastest')}: ${formatTime(stat.best)} · ${t('Average')}: ${formatTime(stat.average)}</small></article>`).join('')}</div><p>${report.details}</p>`;
+	closeModal();
+	showModal('report-modal');
+}
+function renderReports() { const reports = JSON.parse(localStorage.getItem(`forge-reports-${currentUserKey()}`) || '[]'); document.querySelector('#reports-list').innerHTML = reports.length ? reports.map((report) => `<article class="saved-report"><b>${new Date(report.date).toLocaleDateString()}</b><span>${formatTime(report.elapsed || report.duration)} · ${report.reps} reps · ${report.sets} sets</span><small>${report.exerciseStats ? report.exerciseStats.map((stat) => `${stat.name}: ${stat.sets} sets · ${formatTime(stat.time)}`).join(' | ') : report.details}</small></article>`).join('') : '<p class="empty-state">Finish a guided workout to see its report here.</p>'; }
+document.querySelector('#runner-finish').addEventListener('click', () => { if (runner?.exercises.some((exercise) => exercise.completedSets > 0)) finishGuidedWorkout(); else showToast('Complete at least one set before viewing the report.'); });
+document.querySelector('#report-done').addEventListener('click', closeModal);
+document.querySelector('#hydration-banner .hydration-close').addEventListener('click', () => document.querySelector('#hydration-banner').classList.remove('show'));
+
+const trackerFields = ['meal', 'water', 'calorie', 'steps'];
+const savedTracking = JSON.parse(localStorage.getItem('forge-tracking') || '{}');
+trackerFields.forEach((field) => { const input = document.querySelector(`#${field}-input`); if (input && savedTracking[field]) input.value = savedTracking[field]; });
+const subscribeButton = document.querySelector('#subscribe-button');
+function updateSubscriptionButton() { const yearly = localStorage.getItem('forge-billing') === 'yearly'; subscribeButton.innerHTML = localStorage.getItem('forge-premium') === 'active' ? `Premium active · ${yearly ? '€64.69 / year' : '€5.99 / month'} ✓` : `Subscribe for ${yearly ? '€64.69 / year' : '€5.99 / month'} <span>→</span>`; }
+function setPremiumTab(name) {
+	document.querySelectorAll('.premium-tab').forEach((button) => button.classList.toggle('active', button.dataset.ptab === name));
+	document.querySelectorAll('.premium-tab-content').forEach((panel) => panel.classList.toggle('active', panel.id === `premium-${name}`));
+}
+document.querySelectorAll('.premium-tab').forEach((button) => button.addEventListener('click', () => setPremiumTab(button.dataset.ptab)));
+document.querySelectorAll('[data-ptab-link]').forEach((button) => button.addEventListener('click', () => setPremiumTab(button.dataset.ptabLink)));
+
+document.querySelector('#subscribe-button').addEventListener('click', () => { if (localStorage.getItem('forge-premium') === 'active') { showToast('Forge Premium is already active.'); return; } const yearly = localStorage.getItem('forge-billing') === 'yearly'; document.querySelector('#payment-summary').textContent = yearly ? '€64.69 / year · save 10%' : '€5.99 / month'; showModal('payment-modal'); });
+document.querySelector('#payment-form').addEventListener('submit', (event) => { event.preventDefault(); const plan = localStorage.getItem('forge-billing') || 'monthly'; localStorage.setItem('forge-premium', 'active'); localStorage.setItem('forge-subscription', JSON.stringify({ status: 'active', plan, started: new Date().toISOString(), lastFour: document.querySelector('#card-number').value.replace(/\D/g, '').slice(-4) })); event.target.reset(); closeModal(); updateSubscriptionButton(); renderNutritionLock(); showToast('Payment accepted. Premium is active.'); });
+document.querySelectorAll('.billing-option').forEach((option) => option.addEventListener('click', () => { document.querySelectorAll('.billing-option').forEach((item) => item.classList.remove('active')); option.classList.add('active'); localStorage.setItem('forge-billing', option.dataset.billing); updateSubscriptionButton(); showToast(`${option.dataset.billing === 'yearly' ? 'Yearly' : 'Monthly'} plan selected.`); }));
+const savedBilling = localStorage.getItem('forge-billing') || 'monthly'; document.querySelector(`.billing-option[data-billing="${savedBilling}"]`)?.classList.add('active'); updateSubscriptionButton();
+document.querySelector('#save-trackers').addEventListener('click', () => { const tracking = Object.fromEntries(trackerFields.map((field) => [field, document.querySelector(`#${field}-input`).value || 0])); localStorage.setItem('forge-tracking', JSON.stringify(tracking)); showToast('Today\'s tracking saved.'); });
+const themeColors = { lime: '#d9ef54', coral: '#ff765f', blue: '#76b6d7', mint: '#72d6b0', orange: '#ffad5c', 'neon-pink': '#ff2bd6', 'neon-green': '#7dff00', 'neon-blue': '#00e5ff', 'neon-yellow': '#faff00' };
+document.querySelectorAll('.theme-swatch').forEach((swatch) => swatch.addEventListener('click', () => { document.documentElement.style.setProperty('--lime', themeColors[swatch.dataset.theme]); document.querySelectorAll('.theme-swatch').forEach((item) => item.classList.remove('active')); swatch.classList.add('active'); localStorage.setItem('forge-theme', swatch.dataset.theme); showToast('Theme updated.'); }));
+const savedTheme = localStorage.getItem('forge-theme'); if (savedTheme) document.querySelector(`.theme-swatch[data-theme="${savedTheme}"]`)?.click();
+document.querySelector('#generate-report').addEventListener('click', () => { const tracking = JSON.parse(localStorage.getItem('forge-tracking') || '{}'); const sets = JSON.parse(localStorage.getItem('forge-sets') || '[]'); document.querySelector('#monthly-report span').textContent = `${sets.length} sets logged · ${tracking.steps || 0} steps · ${tracking.calorie || 0} kcal tracked today. Keep building your month.`; showToast('Monthly report generated.'); });
+tabs.forEach((tab) => tab.addEventListener('click', () => openTab(tab.dataset.tab)));
+document.querySelectorAll('.modal-close').forEach((button) => button.addEventListener('click', closeModal));
+document.querySelector('#modal-backdrop').addEventListener('click', (event) => { if (event.target.id === 'modal-backdrop') closeModal(); });
+
+// ---- Exercise library: a well-organized menu of common exercises, grouped by category ----
+const categoryIcons = { Chest: '🏋️', Back: '🚣', Legs: '🦵', Shoulders: '🤸', Arms: '💪', Core: '🧘', Cardio: '🏃', Custom: '⭐' };
+const exerciseLibrary = [
+	{ name: 'Bench press', category: 'Chest', equipment: 'Barbell', sets: 4, reps: 8, rest: 120 },
+	{ name: 'Incline dumbbell press', category: 'Chest', equipment: 'Dumbbell', sets: 3, reps: 10, rest: 90 },
+	{ name: 'Cable fly', category: 'Chest', equipment: 'Cable', sets: 3, reps: 12, rest: 60 },
+	{ name: 'Push-up', category: 'Chest', equipment: 'Bodyweight', sets: 3, reps: 15, rest: 60 },
+	{ name: 'Dips', category: 'Chest', equipment: 'Bodyweight', sets: 3, reps: 10, rest: 90 },
+	{ name: 'Deadlift', category: 'Back', equipment: 'Barbell', sets: 4, reps: 5, rest: 150 },
+	{ name: 'Barbell row', category: 'Back', equipment: 'Barbell', sets: 4, reps: 8, rest: 120 },
+	{ name: 'Lat pulldown', category: 'Back', equipment: 'Machine', sets: 3, reps: 10, rest: 90 },
+	{ name: 'Pull-up', category: 'Back', equipment: 'Bodyweight', sets: 3, reps: 8, rest: 90 },
+	{ name: 'Seated cable row', category: 'Back', equipment: 'Cable', sets: 3, reps: 12, rest: 60 },
+	{ name: 'Back squat', category: 'Legs', equipment: 'Barbell', sets: 4, reps: 8, rest: 150 },
+	{ name: 'Romanian deadlift', category: 'Legs', equipment: 'Barbell', sets: 3, reps: 10, rest: 120 },
+	{ name: 'Leg press', category: 'Legs', equipment: 'Machine', sets: 4, reps: 10, rest: 90 },
+	{ name: 'Walking lunge', category: 'Legs', equipment: 'Dumbbell', sets: 3, reps: 12, rest: 60 },
+	{ name: 'Leg curl', category: 'Legs', equipment: 'Machine', sets: 3, reps: 12, rest: 60 },
+	{ name: 'Calf raise', category: 'Legs', equipment: 'Machine', sets: 4, reps: 15, rest: 45 },
+	{ name: 'Overhead press', category: 'Shoulders', equipment: 'Barbell', sets: 3, reps: 10, rest: 120 },
+	{ name: 'Arnold press', category: 'Shoulders', equipment: 'Dumbbell', sets: 3, reps: 10, rest: 90 },
+	{ name: 'Lateral raise', category: 'Shoulders', equipment: 'Dumbbell', sets: 3, reps: 15, rest: 45 },
+	{ name: 'Face pull', category: 'Shoulders', equipment: 'Cable', sets: 3, reps: 15, rest: 45 },
+	{ name: 'Barbell curl', category: 'Arms', equipment: 'Barbell', sets: 3, reps: 12, rest: 60 },
+	{ name: 'Hammer curl', category: 'Arms', equipment: 'Dumbbell', sets: 3, reps: 12, rest: 60 },
+	{ name: 'Tricep pushdown', category: 'Arms', equipment: 'Cable', sets: 3, reps: 12, rest: 60 },
+	{ name: 'Skull crusher', category: 'Arms', equipment: 'Barbell', sets: 3, reps: 10, rest: 60 },
+	{ name: 'Hanging leg raise', category: 'Core', equipment: 'Bodyweight', sets: 3, reps: 12, rest: 60 },
+	{ name: 'Cable crunch', category: 'Core', equipment: 'Cable', sets: 3, reps: 15, rest: 45 },
+	{ name: 'Russian twist', category: 'Core', equipment: 'Bodyweight', sets: 3, reps: 20, rest: 45 },
+	{ name: 'Treadmill intervals', category: 'Cardio', equipment: 'Machine', sets: 1, reps: 20, rest: 0 },
+	{ name: 'Rowing machine', category: 'Cardio', equipment: 'Machine', sets: 1, reps: 15, rest: 0 },
+	{ name: 'Jump rope', category: 'Cardio', equipment: 'Bodyweight', sets: 3, reps: 2, rest: 30 },
+];
+
+// ---- Saved workouts: user-built sessions, persisted per account ----
+function workoutsKey() { return `forge-workouts-${currentUserKey()}`; }
+function loadWorkouts() { try { return JSON.parse(localStorage.getItem(workoutsKey()) || '[]'); } catch (error) { return []; } }
+function saveWorkouts(list) { localStorage.setItem(workoutsKey(), JSON.stringify(list)); }
+
+// The workout currently being assembled in the builder.
+let draft = null;
+
+function renderWorkoutTemplates() {
+	const list = loadWorkouts();
+	document.querySelector('#workout-count').textContent = `${list.length} ${list.length === 1 ? 'SAVED' : 'SAVED'}`;
+	const container = document.querySelector('#workout-templates');
+	if (!list.length) {
+		container.innerHTML = '<p class="empty-state">No workouts yet. Tap “New workout” to build your first session from scratch.</p>';
+		return;
+	}
+	container.innerHTML = list.map((workout) => {
+		const totalSets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
+		return `<article class="template-card" data-id="${workout.id}"><div class="template-top"><div><b>${workout.name}</b><small>${workout.exercises.length} exercises · ${totalSets} sets</small></div><button type="button" class="template-delete" data-delete="${workout.id}" aria-label="Delete workout">🗑</button></div><div class="template-chips">${workout.exercises.map((exercise) => `<span class="template-chip">${categoryIcons[exercise.category] || '🏋️'} ${exercise.name}</span>`).join('')}</div><div class="template-actions"><button type="button" class="secondary-button" data-edit="${workout.id}">Edit</button><button type="button" class="primary-button" data-start="${workout.id}">Start <span>→</span></button></div></article>`;
+	}).join('');
+	container.querySelectorAll('[data-start]').forEach((button) => button.addEventListener('click', () => {
+		const workout = loadWorkouts().find((item) => item.id === Number(button.dataset.start));
+		if (workout) startWorkout(workout);
+	}));
+	container.querySelectorAll('[data-edit]').forEach((button) => button.addEventListener('click', () => {
+		const workout = loadWorkouts().find((item) => item.id === Number(button.dataset.edit));
+		if (workout) openBuilder(JSON.parse(JSON.stringify(workout)));
+	}));
+	container.querySelectorAll('[data-delete]').forEach((button) => button.addEventListener('click', () => {
+		saveWorkouts(loadWorkouts().filter((item) => item.id !== Number(button.dataset.delete)));
+		renderWorkoutTemplates();
+		showToast('Workout deleted.');
+	}));
+}
+
+// ---- Builder: name the session, then add each exercise with its own sets, reps and rest ----
+function openBuilder(existing) {
+	draft = existing || { id: Date.now(), name: '', exercises: [] };
+	document.querySelector('#builder-title').textContent = existing ? 'Edit your session' : 'Build your session';
+	document.querySelector('#builder-name').value = draft.name;
+	renderBuilder();
+	showModal('builder-modal');
+}
+
+function renderBuilder() {
+	document.querySelector('#builder-count').textContent = `${draft.exercises.length} added`;
+	const list = document.querySelector('#builder-list');
+	if (!draft.exercises.length) {
+		list.innerHTML = '<p class="empty-state">Nothing added yet. Use “Add an exercise” to pick from the library.</p>';
+	} else {
+		list.innerHTML = draft.exercises.map((exercise, index) => `<article class="builder-row" data-index="${index}"><div class="builder-row-top"><span class="exercise-icon emoji">${categoryIcons[exercise.category] || '🏋️'}</span><div><b>${exercise.name}</b><small>${exercise.category} · ${exercise.equipment}</small></div><div class="builder-order"><button type="button" data-move="-1" aria-label="Move up">↑</button><button type="button" data-move="1" aria-label="Move down">↓</button><button type="button" data-remove="1" aria-label="Remove">×</button></div></div><div class="builder-fields"><label>Sets<input type="number" min="1" max="12" value="${exercise.sets}" data-field="sets" /></label><label>Reps<input type="number" min="1" max="100" value="${exercise.reps}" data-field="reps" /></label><label>Rest (s)<input type="number" min="0" max="600" step="15" value="${exercise.rest}" data-field="rest" /></label></div></article>`).join('');
+	}
+	list.querySelectorAll('.builder-row').forEach((row) => {
+		const index = Number(row.dataset.index);
+		row.querySelectorAll('input[data-field]').forEach((input) => input.addEventListener('change', () => {
+			const value = Number(input.value);
+			if (Number.isFinite(value) && value >= 0) draft.exercises[index][input.dataset.field] = value;
+		}));
+		row.querySelector('[data-remove]').addEventListener('click', () => { draft.exercises.splice(index, 1); renderBuilder(); });
+		row.querySelectorAll('[data-move]').forEach((button) => button.addEventListener('click', () => {
+			const target = index + Number(button.dataset.move);
+			if (target < 0 || target >= draft.exercises.length) return;
+			[draft.exercises[index], draft.exercises[target]] = [draft.exercises[target], draft.exercises[index]];
+			renderBuilder();
+		}));
+	});
+}
+
+function commitDraftName() { draft.name = document.querySelector('#builder-name').value.trim() || 'Untitled workout'; }
+
+function persistDraft() {
+	commitDraftName();
+	const list = loadWorkouts();
+	const existingIndex = list.findIndex((item) => item.id === draft.id);
+	if (existingIndex >= 0) list[existingIndex] = draft; else list.unshift(draft);
+	saveWorkouts(list);
+	renderWorkoutTemplates();
+}
+
+document.querySelector('#new-workout').addEventListener('click', () => openBuilder(null));
+document.querySelector('#builder-add').addEventListener('click', openLibrary);
+document.querySelector('#builder-add-2').addEventListener('click', openLibrary);
+document.querySelector('#builder-save').addEventListener('click', () => {
+	if (!draft.exercises.length) { showToast('Add at least one exercise first.'); return; }
+	persistDraft();
+	closeModal();
+	showToast(`${draft.name} saved.`);
+});
+document.querySelector('#builder-start').addEventListener('click', () => {
+	if (!draft.exercises.length) { showToast('Add at least one exercise first.'); return; }
+	persistDraft();
+	startWorkout(draft);
+});
+
+// ---- Exercise library: pick exercises into the draft, or define a custom one ----
+let libraryFilter = 'All';
+function renderLibraryFilters() {
+	const cats = ['All', ...new Set(exerciseLibrary.map((exercise) => exercise.category))];
+	const row = document.querySelector('#library-filter-row');
+	row.innerHTML = cats.map((cat) => `<button type="button" class="filter${cat === libraryFilter ? ' active' : ''}" data-cat="${cat}">${cat}</button>`).join('');
+	row.querySelectorAll('.filter').forEach((button) => button.addEventListener('click', () => { libraryFilter = button.dataset.cat; renderLibraryFilters(); renderLibraryList(); }));
+}
+function renderLibraryList() {
+	const list = document.querySelector('#library-list');
+	list.innerHTML = '';
+	exerciseLibrary.filter((exercise) => libraryFilter === 'All' || exercise.category === libraryFilter).forEach((exercise) => {
+		const added = draft?.exercises.some((item) => item.name === exercise.name);
+		const row = document.createElement('button');
+		row.type = 'button';
+		row.className = 'exercise-row library-row';
+		if (added) row.disabled = true;
+		row.innerHTML = `<span class="exercise-icon emoji">${categoryIcons[exercise.category]}</span><span><b>${exercise.name}</b><small>${exercise.category} · ${exercise.equipment} · ${exercise.sets}x${exercise.reps}</small></span><span class="${added ? 'check' : 'add'}">${added ? '✓' : '+'}</span>`;
+		row.addEventListener('click', () => addToDraft(exercise));
+		list.append(row);
+	});
+}
+function addToDraft(exercise) {
+	if (!draft) return;
+	if (draft.exercises.some((item) => item.name === exercise.name)) { showToast(`${exercise.name} is already in this workout.`); return; }
+	draft.exercises.push({ name: exercise.name, category: exercise.category, equipment: exercise.equipment, sets: exercise.sets, reps: exercise.reps, rest: exercise.rest });
+	renderBuilder();
+	renderLibraryList();
+	showToast(`${exercise.name} added.`);
+}
+function openLibrary() { renderLibraryFilters(); renderLibraryList(); if (currentLanguage !== 'en') applyLanguage(currentLanguage); showModal('library-modal'); }
+document.querySelector('#show-custom-form').addEventListener('click', () => document.querySelector('#program-form').classList.toggle('hidden'));
+document.querySelector('#program-form').addEventListener('submit', (event) => {
+	event.preventDefault();
+	addToDraft({
+		name: document.querySelector('#program-name').value.trim(),
+		category: document.querySelector('#program-muscle').value.trim() || 'Custom',
+		equipment: 'Custom',
+		sets: Number(document.querySelector('#program-sets').value) || 3,
+		reps: Number(document.querySelector('#program-reps').value) || 10,
+		rest: Number(document.querySelector('#program-rest').value) || 90,
+	});
+	event.target.reset();
+	event.target.classList.add('hidden');
+});
+document.querySelector('#library-modal .modal-close').addEventListener('click', () => { if (draft) showModal('builder-modal'); });
+
+// ---- Rest timer: counts down between sets with pause-free +15s / skip controls ----
+const restBar = document.querySelector('#rest-timer-bar');
+let restInterval = null;
+function startRestTimer(seconds, exerciseName) {
+	if (!seconds) return;
+	clearInterval(restInterval);
+	let remaining = seconds;
+	const total = seconds;
+	const label = restBar.querySelector('.rest-label');
+	const fill = restBar.querySelector('.rest-fill');
+	const time = restBar.querySelector('.rest-time');
+	label.textContent = `Rest · ${exerciseName}`;
+	function render() {
+		time.textContent = `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`;
+		fill.style.width = `${Math.max((remaining / total) * 100, 0)}%`;
+	}
+	render();
+	restBar.classList.add('show');
+	restInterval = setInterval(() => {
+		remaining -= 1;
+		if (remaining <= 0) {
+			clearInterval(restInterval);
+			restBar.classList.remove('show');
+			if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
+			showToast('Rest complete — next set!');
+			return;
+		}
+		render();
+	}, 1000);
+	restBar.querySelector('.rest-add').onclick = () => { remaining += 15; render(); };
+	restBar.querySelector('.rest-skip').onclick = () => { clearInterval(restInterval); restBar.classList.remove('show'); };
+}
+
+// ---- Personal records: flag a new best and reflect it on the progress stat card ----
+function updateTopLift(exerciseName, weight) {
+	document.querySelector('#top-lift-weight').innerHTML = `${weight} <small>kg</small>`;
+	document.querySelector('#top-lift-name').textContent = `${exerciseName} · new personal best`;
+}
+function checkPersonalRecord(exerciseName, weight) {
+	const prs = JSON.parse(localStorage.getItem('forge-prs') || '{}');
+	if (!prs[exerciseName] || weight > prs[exerciseName]) {
+		prs[exerciseName] = weight;
+		localStorage.setItem('forge-prs', JSON.stringify(prs));
+		updateTopLift(exerciseName, weight);
+		setTimeout(() => showToast(`🎉 New personal best: ${exerciseName} at ${weight} kg!`), 2300);
+	}
+}
+const savedPrs = JSON.parse(localStorage.getItem('forge-prs') || '{}');
+const bestPr = Object.entries(savedPrs).sort((a, b) => b[1] - a[1])[0];
+if (bestPr) updateTopLift(bestPr[0], bestPr[1]);
+
+const savedWorkoutCount = localStorage.getItem('forge-workout-count');
+if (savedWorkoutCount) document.querySelectorAll('#workouts-count, #profile-workouts-count, #profile-page-workouts-count').forEach((element) => { element.textContent = savedWorkoutCount; });
+
+renderWorkoutTemplates();
+// The home-screen button jumps to the Workout tab so the user picks or builds a session.
+document.querySelector('#start-workout').addEventListener('click', () => {
+	const list = loadWorkouts();
+	if (list.length === 1) { startWorkout(list[0]); return; }
+	openTab('workout');
+	if (!list.length) openBuilder(null);
+});
+
+document.querySelector('#add-goal').addEventListener('click', () => showModal('goal-modal'));
+document.querySelector('#goal-form').addEventListener('submit', (event) => { event.preventDefault(); const goal = { name: document.querySelector('#goal-name').value, date: document.querySelector('#goal-date').value }; const goals = JSON.parse(localStorage.getItem('forge-goals') || '[]'); goals.push(goal); localStorage.setItem('forge-goals', JSON.stringify(goals)); addGoalCard(goal, goals.length + 2); event.target.reset(); closeModal(); showToast('Goal created.'); });
+function addGoalCard(goal, number) { const card = document.createElement('div'); card.className = 'goal-card'; card.innerHTML = `<div class="goal-icon">${String(number).padStart(2, '0')}</div><div><b>${goal.name}</b><span>Target: ${goal.date}</span><div class="progress-track"><i style="width:4%"></i></div><small>4% complete</small></div><button class="more-button">...</button>`; document.querySelector('#goals-tab .secondary-button').before(card); }
+JSON.parse(localStorage.getItem('forge-goals') || '[]').forEach((goal, index) => addGoalCard(goal, index + 3));
+document.querySelector('#edit-profile').addEventListener('click', () => { document.querySelector('#edit-name').value = document.querySelector('#profile-name').textContent; document.querySelector('#edit-height').value = parseInt(document.querySelector('#profile-height').textContent, 10); document.querySelector('#edit-weight').value = parseInt(document.querySelector('#profile-weight').textContent, 10); document.querySelector('#edit-focus').value = document.querySelector('#profile-focus').textContent; document.querySelector('#edit-gender').value = ['Male','Female','Other'].includes(document.querySelector('#profile-gender').textContent) ? document.querySelector('#profile-gender').textContent : 'Other'; document.querySelector('#edit-target').value = parseInt(document.querySelector('#profile-page-target').textContent, 10) || 4; showModal('profile-modal'); });
+document.querySelector('#profile-form').addEventListener('submit', (event) => { event.preventDefault(); const values = { name: document.querySelector('#edit-name').value, height: document.querySelector('#edit-height').value, weight: document.querySelector('#edit-weight').value, focus: document.querySelector('#edit-focus').value, gender: document.querySelector('#edit-gender').value, target: document.querySelector('#edit-target').value }; localStorage.setItem('forge-profile', JSON.stringify(values)); const sessionEmail = localStorage.getItem('forge-session'); if (sessionEmail) { const accounts = loadAccounts(); if (accounts[sessionEmail]) { accounts[sessionEmail].profile = { ...accounts[sessionEmail].profile, ...values }; saveAccounts(accounts); } } updateProfile(values); closeModal(); showToast('Profile updated.'); });
+function updateProfile(values) { values.target = values.target || 4; const initials = values.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(); document.querySelectorAll('#profile-name, #profile-page-name').forEach((element) => { element.textContent = values.name; }); document.querySelectorAll('#profile-height, #profile-page-height').forEach((element) => { element.textContent = `${values.height} cm`; }); document.querySelectorAll('#profile-weight, #profile-page-weight').forEach((element) => { element.textContent = `${values.weight} kg`; }); document.querySelectorAll('#profile-focus, #profile-page-focus').forEach((element) => { element.textContent = values.focus; }); document.querySelectorAll('#profile-gender, #profile-page-gender').forEach((element) => { element.textContent = values.gender || '—'; }); document.querySelector('#profile-page-target').textContent = `${values.target} sessions`; document.querySelector('h1').innerHTML = `Good morning, ${values.name.split(' ')[0]}<span class="accent">.</span>`; document.querySelectorAll('.avatar, .large-avatar').forEach((element) => { element.textContent = initials; }); }
+const savedProfile = JSON.parse(localStorage.getItem('forge-profile') || 'null'); if (savedProfile) updateProfile(savedProfile);
+
+// ---- Calendar: each day can be a training day (with a time), a rest day, or empty ----
+function calendarKey() { return `forge-calendar-${currentUserKey()}`; }
+const DAYS_IN_MONTH = 30;
+const MONTH_LABEL = 'September';
+function loadCalendar() {
+	try {
+		const stored = localStorage.getItem(calendarKey());
+		if (stored === null) {
+			const seed = {};
+			[2, 4, 7, 9, 14, 16].forEach((day) => { seed[day] = { status: 'training', time: '18:00', duration: 60, note: '' }; });
+			[6, 13, 20].forEach((day) => { seed[day] = { status: 'rest' }; });
+			localStorage.setItem(calendarKey(), JSON.stringify(seed));
+			return seed;
+		}
+		return JSON.parse(stored);
+	} catch (error) { return {}; }
+}
+function saveCalendar(data) { localStorage.setItem(calendarKey(), JSON.stringify(data)); }
+let calendar = {};
+let selectedDay = null;
+
+function formatClock(time) {
+	if (!time) return '';
+	const [hours, minutes] = time.split(':').map(Number);
+	const suffix = hours >= 12 ? 'PM' : 'AM';
+	const display = hours % 12 === 0 ? 12 : hours % 12;
+	return `${display}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+function renderCalendar() {
+	const grid = document.querySelector('#calendar-grid');
+	grid.innerHTML = '';
+	for (let day = 1; day <= DAYS_IN_MONTH; day += 1) {
+		const entry = calendar[day];
+		const cell = document.createElement('button');
+		cell.type = 'button';
+		cell.className = `calendar-day${entry ? ` ${entry.status}` : ''}${entry?.completed ? ' completed' : ''}`;
+		cell.innerHTML = `<span class="day-number">${day}</span>${entry?.status === 'training' && entry.time ? `<span class="day-time">${entry.time}</span>` : ''}`;
+		cell.addEventListener('click', () => cycleDay(day));
+		grid.append(cell);
+	}
+	renderMonthSummary();
+	renderDayDetail();
+}
+
+// Tapping walks a day through three states: empty -> training -> rest -> empty.
+function cycleDay(day) {
+	const entry = calendar[day];
+	if (!entry) {
+		calendar[day] = { status: 'training', time: '18:00', duration: 60, note: '' };
+		showToast(`Training day added: ${MONTH_LABEL} ${day}. Tap the pencil to set the time.`);
+	} else if (entry.status === 'training') {
+		calendar[day] = { status: 'rest' };
+		if (selectedDay === day) selectedDay = null;
+		showToast(`${MONTH_LABEL} ${day} marked as a rest day.`);
+	} else {
+		delete calendar[day];
+		if (selectedDay === day) selectedDay = null;
+		showToast(`${MONTH_LABEL} ${day} cleared.`);
+	}
+	saveCalendar(calendar);
+	renderCalendar();
+}
+
+function renderMonthSummary() {
+	const entries = Object.values(calendar);
+	const training = entries.filter((entry) => entry.status === 'training');
+	const rest = entries.filter((entry) => entry.status === 'rest').length;
+	const completed = training.filter((entry) => entry.completed).length;
+	const planned = training.length;
+	const minutes = training.reduce((sum, entry) => sum + (Number(entry.duration) || 0), 0);
+	const rate = planned ? Math.round((completed / planned) * 100) : 0;
+	document.querySelector('#month-summary').innerHTML = `<div><b>${planned}</b><span>TRAINING DAYS</span></div><div><b>${rest}</b><span>REST DAYS</span></div><div><b>${completed}/${planned}</b><span>COMPLETED</span></div><div class="summary-bar"><div class="progress-track"><i style="width:${rate}%"></i></div><small>${rate}% of planned sessions done · ${Math.round(minutes / 60)} h scheduled this month</small></div>`;
+}
+
+function renderDayDetail() {
+	const panel = document.querySelector('#day-detail');
+	const days = Object.keys(calendar).map(Number).filter((day) => calendar[day].status === 'training').sort((a, b) => a - b);
+	if (!days.length) { panel.innerHTML = '<p class="empty-state">No sessions scheduled yet. Tap a date above to add one.</p>'; return; }
+	panel.innerHTML = `<p class="eyebrow schedule-label">SCHEDULED SESSIONS</p>${days.map((day) => {
+		const entry = calendar[day];
+		return `<div class="day-detail-card${entry.completed ? ' is-done' : ''}"><div><p class="eyebrow">${MONTH_LABEL.toUpperCase()} ${day}</p><b>${formatClock(entry.time)} · ${entry.duration} min</b>${entry.note ? `<small>${entry.note}</small>` : ''}${entry.completed ? '<span class="done-flag">✓ Completed</span>' : ''}</div><button type="button" class="icon-button" data-edit-day="${day}" aria-label="Edit ${MONTH_LABEL} ${day}">✎</button></div>`;
+	}).join('')}`;
+	panel.querySelectorAll('[data-edit-day]').forEach((button) => button.addEventListener('click', () => openDayModal(Number(button.dataset.editDay))));
+}
+
+function openDayModal(day) {
+	selectedDay = day;
+	const entry = calendar[day] || { time: '18:00', duration: 60, note: '' };
+	document.querySelector('#day-modal-eyebrow').textContent = `${MONTH_LABEL.toUpperCase()} ${day}`;
+	document.querySelector('#day-modal-title').textContent = 'Set your session time';
+	document.querySelector('#day-time').value = entry.time || '18:00';
+	document.querySelector('#day-duration').value = entry.duration || 60;
+	document.querySelector('#day-note').value = entry.note || '';
+	document.querySelector('#day-mark-done').textContent = entry.completed ? 'Mark as not completed' : 'Mark as completed';
+	showModal('day-modal');
+}
+
+document.querySelector('#day-form').addEventListener('submit', (event) => {
+	event.preventDefault();
+	calendar[selectedDay] = {
+		...calendar[selectedDay],
+		status: 'training',
+		time: document.querySelector('#day-time').value,
+		duration: Number(document.querySelector('#day-duration').value) || 60,
+		note: document.querySelector('#day-note').value.trim(),
+	};
+	saveCalendar(calendar);
+	renderCalendar();
+	closeModal();
+	showToast(`${MONTH_LABEL} ${selectedDay} set for ${formatClock(calendar[selectedDay].time)}.`);
+});
+
+document.querySelector('#day-mark-done').addEventListener('click', () => {
+	const entry = calendar[selectedDay];
+	if (!entry) return;
+	entry.completed = !entry.completed;
+	saveCalendar(calendar);
+	renderCalendar();
+	closeModal();
+	showToast(entry.completed ? `${MONTH_LABEL} ${selectedDay} marked complete.` : `${MONTH_LABEL} ${selectedDay} reopened.`);
+});
+
+document.querySelector('#day-clear').addEventListener('click', () => {
+	delete calendar[selectedDay];
+	selectedDay = null;
+	saveCalendar(calendar);
+	renderCalendar();
+	closeModal();
+	showToast('Day cleared.');
+});
+
+function initCalendar() { calendar = loadCalendar(); selectedDay = null; renderCalendar(); }
+initCalendar();
+
+document.querySelector('#reminder-toggle').addEventListener('click', async (event) => { event.currentTarget.classList.toggle('active'); const enabled = event.currentTarget.classList.contains('active'); if (enabled && 'Notification' in window && Notification.permission === 'default') await Notification.requestPermission(); localStorage.setItem('forge-reminders', String(enabled)); showToast(enabled ? 'Weekly reminders enabled.' : 'Weekly reminders paused.'); });
+document.querySelector('#schedule-reminder').addEventListener('click', () => showModal('reminder-modal'));
+document.querySelector('#reminder-form').addEventListener('submit', (event) => { event.preventDefault(); const days = document.querySelector('#reminder-days').value; const time = document.querySelector('#reminder-time').value; localStorage.setItem('forge-reminder-settings', JSON.stringify({ days, time })); document.querySelector('#reminder-status').textContent = `Every ${days} at ${time}`; event.target.reset(); closeModal(); showToast('Reminder saved.'); });
+const savedReminder = JSON.parse(localStorage.getItem('forge-reminder-settings') || 'null'); if (savedReminder) document.querySelector('#reminder-status').textContent = `Every ${savedReminder.days} at ${savedReminder.time}`;
+
+document.querySelector('#find-friend').addEventListener('click', () => { const query = document.querySelector('#friend-search').value.trim(); const result = document.querySelector('#friend-result'); if (!query) { result.innerHTML = ''; return; } result.innerHTML = `<div class="search-result"><span class="friend-avatar">${query.slice(0, 2).toUpperCase()}</span><span><b>${query}</b><small>Forge member</small></span><button class="invite-button" data-friend="${query}">Add friend</button></div>`; result.querySelector('.invite-button').addEventListener('click', () => { saveFriend(query); result.innerHTML = '<p class="social-confirmation">Friend request sent.</p>'; }); });
+function saveFriend(name) { const friends = JSON.parse(localStorage.getItem('forge-friends') || '[]'); if (!friends.includes(name)) { friends.push(name); localStorage.setItem('forge-friends', JSON.stringify(friends)); document.querySelector('#friend-count').textContent = `${friends.length + 2} FRIENDS`; } showToast(`Friend request sent to ${name}.`); }
+document.querySelectorAll('.invite-button').forEach((button) => button.addEventListener('click', () => { document.querySelector('#invite-name').value = button.dataset.friend; showModal('invite-modal'); }));
+document.querySelector('#invite-friend').addEventListener('click', () => showModal('invite-modal'));
+document.querySelector('#invite-form').addEventListener('submit', (event) => { event.preventDefault(); const invite = { name: document.querySelector('#invite-name').value, contact: document.querySelector('#invite-contact').value, day: document.querySelector('#invite-day').value }; localStorage.setItem('forge-last-invite', JSON.stringify(invite)); event.target.reset(); closeModal(); showToast(`Invitation sent to ${invite.name}.`); });
+
+// ---- Premium nutrition: goal-driven meal guidance with full recipes ----
+const nutritionGoals = {
+	muscle: { label: 'Build muscle', icon: '💪', calories: '+300 to +500 kcal above maintenance', protein: '1.8–2.2 g per kg bodyweight', carbs: '4–6 g per kg', fats: '0.8–1 g per kg', advice: 'A modest surplus with high protein gives your body the raw material to repair and grow after training. Spread protein across four or five meals and keep carbohydrates high around your workouts so you can train hard session after session.' },
+	lean: { label: 'Lose fat', icon: '🔥', calories: '−300 to −500 kcal below maintenance', protein: '2.0–2.4 g per kg bodyweight', carbs: '2–3 g per kg', fats: '0.6–0.8 g per kg', advice: 'A moderate deficit protects your muscle while body fat comes down. Keep protein high to stay full and preserve lean mass, prioritize high-volume vegetables, and avoid dropping calories so low that your training quality suffers.' },
+	endurance: { label: 'Endurance', icon: '🏃', calories: 'At or slightly above maintenance', protein: '1.4–1.6 g per kg bodyweight', carbs: '6–8 g per kg', fats: '0.8–1 g per kg', advice: 'Carbohydrate is your primary fuel for long efforts. Top up glycogen the day before hard sessions, eat a carb-focused meal two to three hours before training, and refuel with carbs plus protein within an hour of finishing.' },
+	maintain: { label: 'Stay healthy', icon: '🌿', calories: 'Around maintenance', protein: '1.4–1.8 g per kg bodyweight', carbs: '3–5 g per kg', fats: '0.8–1 g per kg', advice: 'Balance matters more than precision here. Build most meals from whole foods, aim for thirty different plants a week, and keep protein steady so you hold onto muscle as you age.' },
+};
+const recipes = [
+	{ id: 'r1', name: 'Grilled chicken and quinoa bowl', meal: 'Lunch', goals: ['muscle', 'lean', 'maintain'], time: '25 min', icon: '🍗',
+		summary: 'A high-protein bowl that keeps you full for hours without feeling heavy.',
+		ingredients: ['180 g chicken breast', '80 g dry quinoa', '1 red pepper, sliced', '100 g broccoli florets', '1 tbsp olive oil', 'Juice of half a lemon', 'Salt, pepper, smoked paprika'],
+		steps: ['Rinse the quinoa, then simmer in 160 ml water for 15 minutes until the water is absorbed.', 'Season the chicken with salt, pepper and paprika. Grill 5–6 minutes per side until cooked through.', 'Steam or roast the broccoli and pepper for 8 minutes so they keep some bite.', 'Rest the chicken 3 minutes, then slice against the grain.', 'Combine everything in a bowl, dress with olive oil and lemon juice.'],
+		nutrition: { calories: 620, protein: 52, carbs: 58, fats: 18, fiber: 9 },
+		benefit: 'Complete protein from the chicken plus all nine essential amino acids from quinoa makes this ideal for post-training repair. The fibre from the vegetables slows digestion, so energy releases steadily rather than spiking.' },
+	{ id: 'r2', name: 'Overnight oats with berries', meal: 'Breakfast', goals: ['endurance', 'maintain', 'muscle'], time: '5 min + overnight', icon: '🥣',
+		summary: 'Zero-effort breakfast prepared the night before, ready when you wake.',
+		ingredients: ['70 g rolled oats', '200 ml milk or fortified soy milk', '150 g Greek yogurt', '1 tbsp chia seeds', '100 g mixed berries', '1 tsp honey', 'Pinch of cinnamon'],
+		steps: ['Stir the oats, milk, chia seeds and cinnamon together in a jar.', 'Fold in half the yogurt, then seal and refrigerate overnight.', 'In the morning, top with the remaining yogurt, berries and honey.', 'Eat cold, or warm gently for 60 seconds if you prefer.'],
+		nutrition: { calories: 510, protein: 28, carbs: 66, fats: 14, fiber: 12 },
+		benefit: 'Slow-release oats plus the beta-glucan fibre keep blood sugar level through the morning. The berries add polyphenols that help reduce exercise-induced inflammation, and the yogurt supplies casein protein for sustained amino acid release.' },
+	{ id: 'r3', name: 'Salmon, sweet potato and greens', meal: 'Dinner', goals: ['muscle', 'maintain', 'endurance'], time: '35 min', icon: '🐟',
+		summary: 'Omega-3 rich dinner that supports recovery and joint health.',
+		ingredients: ['170 g salmon fillet', '250 g sweet potato', '100 g spinach', '1 clove garlic, minced', '1 tbsp olive oil', 'Half a lemon', 'Salt and black pepper'],
+		steps: ['Heat the oven to 200°C. Cube the sweet potato, toss in half the oil and salt, roast 25 minutes.', 'Season the salmon and add it to the tray for the final 12–14 minutes.', 'Wilt the spinach in the remaining oil with the garlic, about 2 minutes.', 'Plate together and finish with a squeeze of lemon.'],
+		nutrition: { calories: 680, protein: 42, carbs: 52, fats: 32, fiber: 8 },
+		benefit: 'Salmon delivers EPA and DHA omega-3 fats, which research links to reduced muscle soreness and better joint health in people who train regularly. Sweet potato restocks glycogen, and spinach adds nitrates that support blood flow.' },
+	{ id: 'r4', name: 'Turkey and black bean chili', meal: 'Dinner', goals: ['lean', 'muscle'], time: '40 min', icon: '🌶️',
+		summary: 'High-volume, high-protein meal that satisfies on lower calories.',
+		ingredients: ['400 g lean turkey mince', '1 tin black beans, drained', '1 tin chopped tomatoes', '1 onion, diced', '2 peppers, diced', '2 cloves garlic', '1 tbsp cumin', '1 tsp chili powder', '1 tsp olive oil'],
+		steps: ['Soften the onion, peppers and garlic in the oil for 5 minutes.', 'Add the turkey and brown, breaking it up as it cooks.', 'Stir in the spices and cook 1 minute until fragrant.', 'Add the tomatoes and beans, then simmer uncovered for 25 minutes.', 'Season to taste and serve. It improves overnight, so make extra.'],
+		nutrition: { calories: 430, protein: 45, carbs: 34, fats: 11, fiber: 13 },
+		benefit: 'The combination of lean protein and soluble fibre from the beans produces strong satiety per calorie, which is exactly what you want in a deficit. Batch cooking also removes the decision fatigue that derails most fat loss attempts.' },
+	{ id: 'r5', name: 'Pre-workout banana oat pancakes', meal: 'Pre-workout', goals: ['endurance', 'muscle'], time: '15 min', icon: '🥞',
+		summary: 'Easy-to-digest carbohydrate about 90 minutes before you train.',
+		ingredients: ['1 ripe banana', '50 g oat flour', '2 eggs', '1 scoop whey or 30 g milk powder', 'Half tsp baking powder', 'Pinch of salt', '1 tsp coconut oil'],
+		steps: ['Blend everything except the oil until smooth, then rest the batter 3 minutes.', 'Heat the oil in a non-stick pan over medium heat.', 'Cook in small pancakes, roughly 90 seconds per side, until golden.', 'Serve plain or with a little honey if you are training long.'],
+		nutrition: { calories: 480, protein: 34, carbs: 58, fats: 13, fiber: 6 },
+		benefit: 'The banana provides fast-acting carbohydrate while the oats release more slowly, giving you fuel across a whole session. Low fat and moderate fibre mean it clears the stomach quickly and does not sit heavy while you train.' },
+	{ id: 'r6', name: 'Greek yogurt recovery smoothie', meal: 'Post-workout', goals: ['muscle', 'endurance', 'lean'], time: '5 min', icon: '🥤',
+		summary: 'Fast protein and carbohydrate in the window right after training.',
+		ingredients: ['200 g Greek yogurt', '1 banana', '150 ml milk', '30 g whey protein or 2 tbsp peanut butter', '100 g frozen berries', 'Handful of ice'],
+		steps: ['Add the liquid to the blender first so the blades move freely.', 'Add the yogurt, banana, berries and protein.', 'Blend 45 seconds until completely smooth.', 'Drink within 60 minutes of finishing your session.'],
+		nutrition: { calories: 450, protein: 41, carbs: 48, fats: 9, fiber: 5 },
+		benefit: 'Liquid nutrition digests faster than solid food, so amino acids reach your muscles sooner after training. The carbohydrate replenishes glycogen while the whey drives muscle protein synthesis in the hours that follow.' },
+	{ id: 'r7', name: 'Egg and avocado wholegrain toast', meal: 'Breakfast', goals: ['lean', 'maintain'], time: '10 min', icon: '🥑',
+		summary: 'Balanced, quick, and genuinely filling for the calories.',
+		ingredients: ['2 slices wholegrain bread', '2 eggs', 'Half an avocado', '5 cherry tomatoes', 'Chili flakes', 'Salt, pepper, lemon juice'],
+		steps: ['Toast the bread while you bring a small pan of water to a gentle simmer.', 'Poach the eggs for 3 minutes for a soft yolk.', 'Mash the avocado with lemon juice, salt and pepper, then spread on the toast.', 'Top with the eggs, halved tomatoes and a pinch of chili flakes.'],
+		nutrition: { calories: 480, protein: 24, carbs: 38, fats: 26, fiber: 11 },
+		benefit: 'Monounsaturated fat from the avocado supports hormone production, which matters when you are dieting. Whole eggs supply choline and vitamin D, and the fibre in wholegrain bread blunts the blood sugar response.' },
+	{ id: 'r8', name: 'Lentil and vegetable soup', meal: 'Lunch', goals: ['lean', 'maintain', 'endurance'], time: '30 min', icon: '🍲',
+		summary: 'Plant-based, high-fibre, and cheap to batch cook.',
+		ingredients: ['200 g dry red lentils', '1 onion, 2 carrots, 2 celery sticks, diced', '2 cloves garlic', '1 litre vegetable stock', '1 tin chopped tomatoes', '1 tsp cumin', '1 tbsp olive oil'],
+		steps: ['Sweat the onion, carrot and celery in the oil for 8 minutes until soft.', 'Add the garlic and cumin, cook 1 minute more.', 'Stir in the lentils, stock and tomatoes, then bring to a boil.', 'Reduce heat and simmer 20 minutes until the lentils collapse.', 'Blend half the soup for texture, season, and serve.'],
+		nutrition: { calories: 340, protein: 21, carbs: 52, fats: 6, fiber: 16 },
+		benefit: 'Sixteen grams of fibre per serving feeds your gut bacteria, and the soluble fibre in lentils helps lower LDL cholesterol. Very high volume for the calories, so it fills you up during a deficit.' },
+	{ id: 'r9', name: 'Beef stir-fry with rice', meal: 'Dinner', goals: ['muscle', 'endurance'], time: '20 min', icon: '🥩',
+		summary: 'Iron-rich, carb-heavy meal for hard training days.',
+		ingredients: ['200 g lean beef strips', '150 g dry jasmine rice', '200 g mixed stir-fry vegetables', '2 tbsp soy sauce', '1 tbsp sesame oil', '1 tsp grated ginger', '1 clove garlic'],
+		steps: ['Cook the rice according to the packet, then keep it covered.', 'Get a wok very hot. Sear the beef in half the oil for 2 minutes, then set aside.', 'Add the remaining oil, ginger and garlic, then the vegetables. Stir-fry 4 minutes.', 'Return the beef, add the soy sauce, toss for 1 minute and serve over the rice.'],
+		nutrition: { calories: 720, protein: 48, carbs: 82, fats: 20, fiber: 6 },
+		benefit: 'Red meat supplies heme iron and creatine, both of which support oxygen transport and power output. The generous rice portion refills glycogen, making this a strong choice on your heaviest training days.' },
+	{ id: 'r10', name: 'Cottage cheese and fruit bowl', meal: 'Snack', goals: ['lean', 'muscle', 'maintain'], time: '3 min', icon: '🍎',
+		summary: 'Slow-digesting protein snack, ideal before bed.',
+		ingredients: ['200 g cottage cheese', '1 apple or pear, diced', '20 g walnuts', '1 tsp honey', 'Cinnamon to taste'],
+		steps: ['Spoon the cottage cheese into a bowl.', 'Top with the diced fruit and roughly chopped walnuts.', 'Drizzle with honey and dust with cinnamon.'],
+		nutrition: { calories: 380, protein: 30, carbs: 30, fats: 16, fiber: 6 },
+		benefit: 'Cottage cheese is mostly casein, which digests over several hours and drip-feeds amino acids while you sleep. Eating it in the evening supports overnight recovery without a heavy meal sitting in your stomach.' },
+];
+
+let nutritionGoal = localStorage.getItem('forge-nutrition-goal') || 'muscle';
+let mealFilter = 'All';
+
+function isPremium() { return localStorage.getItem('forge-premium') === 'active'; }
+
+function renderNutritionLock() {
+	const locked = !isPremium();
+	document.querySelector('#nutrition-lock').style.display = locked ? 'block' : 'none';
+	document.querySelector('#nutrition-content').classList.toggle('locked', locked);
+}
+
+function renderGoalPicker() {
+	document.querySelector('#nutrition-goal-picker').innerHTML = Object.entries(nutritionGoals).map(([key, goal]) => `<button type="button" class="goal-option${key === nutritionGoal ? ' active' : ''}" data-goal="${key}"><span>${goal.icon}</span><b>${goal.label}</b></button>`).join('');
+	document.querySelectorAll('.goal-option').forEach((button) => button.addEventListener('click', () => {
+		nutritionGoal = button.dataset.goal;
+		localStorage.setItem('forge-nutrition-goal', nutritionGoal);
+		renderGoalPicker();
+		renderNutritionSummary();
+		renderRecipes();
+	}));
+}
+
+function renderNutritionSummary() {
+	const goal = nutritionGoals[nutritionGoal];
+	document.querySelector('#nutrition-summary').innerHTML = `<div class="macro-grid"><div><span>CALORIES</span><b>${goal.calories}</b></div><div><span>PROTEIN</span><b>${goal.protein}</b></div><div><span>CARBS</span><b>${goal.carbs}</b></div><div><span>FATS</span><b>${goal.fats}</b></div></div><p class="nutrition-advice">${goal.advice}</p>`;
+}
+
+function renderMealFilters() {
+	const meals = ['All', ...new Set(recipes.filter((recipe) => recipe.goals.includes(nutritionGoal)).map((recipe) => recipe.meal))];
+	if (!meals.includes(mealFilter)) mealFilter = 'All';
+	const row = document.querySelector('#meal-filter-row');
+	row.innerHTML = meals.map((meal) => `<button type="button" class="filter${meal === mealFilter ? ' active' : ''}" data-meal="${meal}">${meal}</button>`).join('');
+	row.querySelectorAll('.filter').forEach((button) => button.addEventListener('click', () => { mealFilter = button.dataset.meal; renderMealFilters(); renderRecipeList(); }));
+}
+
+function renderRecipeList() {
+	const matches = recipes.filter((recipe) => recipe.goals.includes(nutritionGoal) && (mealFilter === 'All' || recipe.meal === mealFilter));
+	const list = document.querySelector('#recipe-list');
+	list.innerHTML = matches.map((recipe) => `<button type="button" class="recipe-row" data-recipe="${recipe.id}"><span class="recipe-icon">${recipe.icon}</span><span class="recipe-copy"><b>${recipe.name}</b><small>${recipe.meal} · ${recipe.time} · ${recipe.nutrition.calories} kcal · ${recipe.nutrition.protein}g protein</small><em>${recipe.summary}</em></span><span class="add">→</span></button>`).join('') || '<p class="empty-state">No recipes match this filter yet.</p>';
+	list.querySelectorAll('.recipe-row').forEach((row) => row.addEventListener('click', () => openRecipe(row.dataset.recipe)));
+}
+
+function renderRecipes() { renderMealFilters(); renderRecipeList(); }
+
+function openRecipe(id) {
+	const recipe = recipes.find((item) => item.id === id);
+	if (!recipe) return;
+	if (!isPremium()) { showToast('Subscribe to Forge Premium to open full recipes.'); return; }
+	document.querySelector('#recipe-eyebrow').textContent = `${recipe.meal.toUpperCase()} · ${recipe.time.toUpperCase()}`;
+	document.querySelector('#recipe-title').textContent = `${recipe.icon} ${recipe.name}`;
+	document.querySelector('#recipe-body').innerHTML = `<p class="recipe-summary">${recipe.summary}</p>
+		<div class="macro-grid tight"><div><span>CALORIES</span><b>${recipe.nutrition.calories}</b></div><div><span>PROTEIN</span><b>${recipe.nutrition.protein} g</b></div><div><span>CARBS</span><b>${recipe.nutrition.carbs} g</b></div><div><span>FATS</span><b>${recipe.nutrition.fats} g</b></div><div><span>FIBRE</span><b>${recipe.nutrition.fiber} g</b></div></div>
+		<h3 class="recipe-heading">Ingredients</h3><ul class="recipe-list-ul">${recipe.ingredients.map((item) => `<li>${item}</li>`).join('')}</ul>
+		<h3 class="recipe-heading">Method</h3><ol class="recipe-steps">${recipe.steps.map((step) => `<li>${step}</li>`).join('')}</ol>
+		<h3 class="recipe-heading">Why this helps</h3><p class="recipe-benefit">${recipe.benefit}</p>`;
+	showModal('recipe-modal');
+}
+
+renderNutritionLock();
+renderGoalPicker();
+renderNutritionSummary();
+renderRecipes();
+
+// ---- Accounts: many accounts can live side by side, and the session survives a reload ----
+function loadAccounts() { try { return JSON.parse(localStorage.getItem('forge-accounts') || '{}'); } catch (error) { return {}; } }
+function saveAccounts(accounts) { localStorage.setItem('forge-accounts', JSON.stringify(accounts)); }
+// A tiny non-cryptographic hash so raw passwords never sit in storage. Real apps hash on the server.
+function hashPassword(password) { let hash = 5381; for (let index = 0; index < password.length; index += 1) hash = ((hash << 5) + hash + password.charCodeAt(index)) >>> 0; return `h${hash.toString(36)}`; }
+
+// ---- Inbox: incoming friend requests and gym invites, per account ----
+function requestsKey() { return `forge-requests-${currentUserKey()}`; }
+const seedRequests = [
+	{ id: 1, type: 'friend', name: 'Jamie Diaz', detail: 'Trains 5x a week · 82.5 kg bench', when: '24 minutes ago' },
+	{ id: 2, type: 'gym', name: 'Sam Kim', detail: 'Leg day at Iron Works · Saturday 10:00', when: '2 hours ago' },
+	{ id: 3, type: 'friend', name: 'Nadia Petrou', detail: 'Found you by email', when: 'Yesterday' },
+];
+function loadRequests() {
+	try {
+		const stored = localStorage.getItem(requestsKey());
+		if (stored === null) { localStorage.setItem(requestsKey(), JSON.stringify(seedRequests)); return [...seedRequests]; }
+		return JSON.parse(stored);
+	} catch (error) { return []; }
+}
+function saveRequests(list) { localStorage.setItem(requestsKey(), JSON.stringify(list)); }
+function initials(name) { return name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(); }
+function renderRequests() {
+	const list = loadRequests();
+	document.querySelector('#request-count').textContent = `${list.length} PENDING`;
+	const container = document.querySelector('#request-list');
+	if (!list.length) { container.innerHTML = '<p class="empty-state">Nothing waiting. New friend requests and gym invites land here.</p>'; return; }
+	container.innerHTML = list.map((request) => `<article class="request-row" data-id="${request.id}"><span class="friend-avatar${request.type === 'gym' ? ' coral-avatar' : ''}">${initials(request.name)}</span><div class="request-copy"><b>${request.name}</b><span class="request-tag">${request.type === 'gym' ? '🏋️ Gym invite' : '👤 Friend request'}</span><small>${request.detail}</small><em>${request.when}</em></div><div class="request-actions"><button type="button" class="request-accept" data-accept="${request.id}">Accept</button><button type="button" class="request-decline" data-decline="${request.id}">Decline</button></div></article>`).join('');
+	container.querySelectorAll('[data-accept]').forEach((button) => button.addEventListener('click', () => resolveRequest(Number(button.dataset.accept), true)));
+	container.querySelectorAll('[data-decline]').forEach((button) => button.addEventListener('click', () => resolveRequest(Number(button.dataset.decline), false)));
+}
+function resolveRequest(id, accepted) {
+	const list = loadRequests();
+	const request = list.find((item) => item.id === id);
+	if (!request) return;
+	saveRequests(list.filter((item) => item.id !== id));
+	if (accepted) {
+		if (request.type === 'friend') {
+			saveFriend(request.name);
+			addFriendRow(request.name, request.detail);
+		} else {
+			showToast(`Gym session with ${request.name} confirmed.`);
+		}
+	} else {
+		showToast(`Declined ${request.name}.`);
+	}
+	renderRequests();
+}
+function addFriendRow(name, detail) {
+	const row = document.createElement('div');
+	row.className = 'friend-row';
+	row.innerHTML = `<span class="friend-avatar">${initials(name)}</span><span><b>${name}</b><small>${detail}</small></span><button class="invite-button" data-friend="${name}">Invite</button>`;
+	row.querySelector('.invite-button').addEventListener('click', () => { document.querySelector('#invite-name').value = name; showModal('invite-modal'); });
+	document.querySelector('#friend-list').append(row);
+}
+renderRequests();
+
+const authForm = document.querySelector('#auth-form');
+function setAuthMode(signUp) { isSignUp = signUp; document.querySelectorAll('.signup-only').forEach((element) => { element.classList.toggle('visible', isSignUp); element.querySelectorAll('input, select').forEach((field) => { field.required = isSignUp; }); }); document.querySelector('#auth-submit').innerHTML = isSignUp ? 'Create account <span>-></span>' : 'Sign in <span>-></span>'; document.querySelector('#auth-switch').textContent = isSignUp ? 'Already have an account? Sign in' : 'New here? Create an account'; document.querySelector('#auth-message').textContent = ''; }
+setAuthMode(false);
+document.querySelector('#auth-switch').addEventListener('click', () => setAuthMode(!isSignUp));
+
+function enterApp(email, profile) {
+	localStorage.setItem('forge-session', email);
+	localStorage.setItem('forge-account', JSON.stringify({ email, ...profile }));
+	localStorage.setItem('forge-profile', JSON.stringify(profile));
+	updateProfile(profile);
+	authScreen.classList.add('hidden');
+	// Per-account data has its own storage key, so refresh anything that reads it.
+	renderWorkoutTemplates();
+	renderNutritionLock();
+	renderRequests();
+	initCalendar();
+}
+
+function signOut() {
+	localStorage.removeItem('forge-session');
+	setAuthMode(false);
+	authForm.reset();
+	authScreen.classList.remove('hidden');
+}
+
+authForm.addEventListener('submit', (event) => {
+	event.preventDefault();
+	const email = document.querySelector('#auth-email').value.trim().toLowerCase();
+	const password = document.querySelector('#auth-password').value;
+	const message = document.querySelector('#auth-message');
+	const accounts = loadAccounts();
+
+	if (isSignUp) {
+		if (accounts[email]) { message.textContent = 'That email already has an account. Sign in instead.'; return; }
+		const profile = {
+			name: document.querySelector('#auth-name').value.trim() || 'Athlete',
+			height: document.querySelector('#auth-height').value || 178,
+			weight: document.querySelector('#auth-weight').value || 76,
+			gender: document.querySelector('#auth-gender').value,
+			focus: document.querySelector('#auth-focus').value,
+			target: document.querySelector('#auth-target').value || 4,
+			joined: new Date().toISOString(),
+		};
+		accounts[email] = { email, password: hashPassword(password), profile };
+		saveAccounts(accounts);
+		enterApp(email, profile);
+		showToast(`Welcome to Forge, ${profile.name.split(' ')[0]}.`);
+		return;
+	}
+
+	const account = accounts[email];
+	if (!account || account.password !== hashPassword(password)) { message.textContent = 'No matching account. Check your details or create one.'; return; }
+	enterApp(email, account.profile);
+	showToast(`Welcome back, ${account.profile.name.split(' ')[0]}.`);
+});
+
+document.querySelector('#sign-out').addEventListener('click', signOut);
+
+const profilePage = document.querySelector('#profile-page');
+function openProfilePage() { profilePage.classList.add('open'); profilePage.setAttribute('aria-hidden', 'false'); }
+function closeProfilePage() { profilePage.classList.remove('open'); profilePage.setAttribute('aria-hidden', 'true'); }
+document.querySelector('[data-profile]').addEventListener('click', openProfilePage);
+document.querySelector('#close-profile').addEventListener('click', closeProfilePage);
+document.querySelector('#profile-page-edit').addEventListener('click', () => { closeProfilePage(); document.querySelector('#edit-profile').click(); });
+document.querySelector('#profile-settings').addEventListener('click', () => { closeProfilePage(); document.querySelector('#edit-profile').click(); });
+document.querySelector('#profile-page-sign-out').addEventListener('click', () => { closeProfilePage(); signOut(); });
+
+// ---- Session restore: if someone is already signed in, skip the auth screen entirely ----
+(function restoreSession() {
+	const email = localStorage.getItem('forge-session');
+	if (!email) return;
+	const account = loadAccounts()[email];
+	if (!account) { localStorage.removeItem('forge-session'); return; }
+	enterApp(email, account.profile);
+})();</script>
+</body>
+</html>
