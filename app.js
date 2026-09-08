@@ -1,3 +1,175 @@
+// ---- Storage shim ----
+// Some browsers throw when localStorage is touched on a file:// page or in private mode.
+// Swapping in an in-memory store keeps the whole app working instead of dying on first write.
+(function ensureStorage() {
+	let usable = true;
+	try {
+		const probe = '__forge_probe__';
+		window.localStorage.setItem(probe, '1');
+		window.localStorage.removeItem(probe);
+	} catch (error) {
+		usable = false;
+	}
+	if (usable) return;
+	const memory = new Map();
+	const fallback = {
+		getItem: (key) => (memory.has(String(key)) ? memory.get(String(key)) : null),
+		setItem: (key, value) => { memory.set(String(key), String(value)); },
+		removeItem: (key) => { memory.delete(String(key)); },
+		clear: () => memory.clear(),
+		key: (index) => [...memory.keys()][index] ?? null,
+		get length() { return memory.size; },
+	};
+	try {
+		Object.defineProperty(window, 'localStorage', { configurable: true, get: () => fallback });
+	} catch (error) {
+		window.forgeMemoryStorage = fallback;
+	}
+	console.warn('Forge: localStorage unavailable, falling back to in-memory storage. Data will not persist. Serve the app over http:// to enable saving.');
+})();
+
+// ---- Gym avatars: a premium perk, drawn as inline SVG so they stay crisp at any size ----
+const avatarColours = ['#d9ef54', '#ff765f', '#76b6d7', '#72d6b0', '#ffad5c', '#c9a6f5', '#ff2bd6', '#faff00'];
+const avatarArt = {
+	dumbbell: '<rect x="12" y="26" width="7" height="12" rx="2"/><rect x="45" y="26" width="7" height="12" rx="2"/><rect x="20" y="28" width="5" height="8" rx="1.5"/><rect x="39" y="28" width="5" height="8" rx="1.5"/><rect x="25" y="30" width="14" height="4" rx="1.5"/>',
+	kettlebell: '<path d="M32 16c-6 0-9 4-9 8 0 2 .6 3.4 1.4 4.4C20.6 30.6 18 35 18 40c0 6 6 10 14 10s14-4 14-10c0-5-2.6-9.4-6.4-11.6.8-1 1.4-2.4 1.4-4.4 0-4-3-8-9-8zm0 4c3 0 5 2 5 4s-2 3-5 3-5-1-5-3 2-4 5-4z"/>',
+	barbell: '<rect x="8" y="24" width="6" height="16" rx="2"/><rect x="16" y="20" width="7" height="24" rx="2"/><rect x="41" y="20" width="7" height="24" rx="2"/><rect x="50" y="24" width="6" height="16" rx="2"/><rect x="23" y="29" width="18" height="6" rx="2"/>',
+	flex: '<path d="M20 44c0-8 4-14 10-14 4 0 6 2 8 2 4 0 6-4 6-8 0-2-1-4-3-5 4 0 8 4 8 10 0 8-6 13-12 13-3 0-5-1-7-1-4 0-6 2-6 6z"/><circle cx="24" cy="24" r="6"/>',
+	trophy: '<path d="M22 14h20v10c0 7-4 12-10 12s-10-5-10-12V14z"/><path d="M18 16h-4v4c0 4 2 6 5 7M46 16h4v4c0 4-2 6-5 7" fill="none" stroke="currentColor" stroke-width="3"/><rect x="29" y="36" width="6" height="8"/><rect x="22" y="44" width="20" height="5" rx="1.5"/>',
+	shoe: '<path d="M14 38c0-4 2-6 5-8l8-5 4 5 5-3 4 4 6 1c4 .6 6 3 6 6v4H14v-4z"/><rect x="12" y="42" width="42" height="5" rx="2"/>',
+	bottle: '<rect x="27" y="12" width="10" height="6" rx="2"/><path d="M25 20h14c2 0 3 1.4 3 3v24c0 2.4-1.4 4-4 4H26c-2.6 0-4-1.6-4-4V23c0-1.6 1-3 3-3z"/><rect x="26" y="30" width="12" height="7" rx="1.5" fill="#14231f" opacity=".35"/>',
+	heart: '<path d="M32 48S14 38 14 27c0-6 4-10 9-10 4 0 7 2 9 5 2-3 5-5 9-5 5 0 9 4 9 10 0 11-18 21-18 21z"/>',
+	bolt: '<path d="M36 10L18 36h11l-3 18 20-28H34l2-16z"/>',
+	medal: '<path d="M22 10h8l6 14h-8L22 10zM42 10h-8l-6 14h8l6-14z"/><circle cx="32" cy="40" r="14"/><circle cx="32" cy="40" r="7" fill="#14231f" opacity=".3"/>',
+};
+const avatarKeys = Object.keys(avatarArt);
+
+function avatarKey() { return `forge-avatar-${currentUserKey()}`; }
+function loadAvatar() { try { return JSON.parse(localStorage.getItem(avatarKey()) || 'null'); } catch (error) { return null; } }
+function saveAvatar(value) { if (value) localStorage.setItem(avatarKey(), JSON.stringify(value)); else localStorage.removeItem(avatarKey()); applyAvatar(); }
+function avatarSvg(art, colour, size) {
+	return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="${colour}"/><g fill="#14231f">${avatarArt[art]}</g></svg>`;
+}
+function applyAvatar() {
+	const avatar = loadAvatar();
+	const initials = (document.querySelector('#profile-name')?.textContent || 'You').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+	[['#topbar-avatar', 42], ['#profile-avatar', 66], ['#profile-page-avatar', 66]].forEach(([selector, size]) => {
+		const node = document.querySelector(selector);
+		if (!node) return;
+		if (avatar && isPremium()) { node.innerHTML = avatarSvg(avatar.art, avatar.colour, size); node.classList.add('has-art'); }
+		else { node.textContent = initials; node.classList.remove('has-art'); }
+	});
+}
+function renderAvatarPicker() {
+	const locked = !isPremium();
+	document.querySelector('#avatar-lock').style.display = locked ? 'block' : 'none';
+	document.querySelector('#avatar-content').classList.toggle('locked', locked);
+	const current = loadAvatar() || { art: avatarKeys[0], colour: avatarColours[0] };
+	document.querySelector('#avatar-grid').innerHTML = avatarKeys.map((art) => `<button type="button" class="avatar-option${art === current.art ? ' active' : ''}" data-art="${art}">${avatarSvg(art, current.colour, 52)}</button>`).join('');
+	document.querySelector('#avatar-colours').innerHTML = avatarColours.map((colour) => `<button type="button" class="colour-swatch${colour === current.colour ? ' active' : ''}" data-colour="${colour}" style="background:${colour}" aria-label="Colour ${colour}"></button>`).join('');
+	document.querySelectorAll('.avatar-option').forEach((button) => button.addEventListener('click', () => { saveAvatar({ ...current, art: button.dataset.art }); renderAvatarPicker(); showToast('Avatar updated.'); }));
+	document.querySelectorAll('.colour-swatch').forEach((button) => button.addEventListener('click', () => { saveAvatar({ ...current, colour: button.dataset.colour }); renderAvatarPicker(); }));
+}
+document.querySelector('#choose-avatar').addEventListener('click', () => { renderAvatarPicker(); showModal('avatar-modal'); });
+document.querySelector('#avatar-reset').addEventListener('click', () => { saveAvatar(null); renderAvatarPicker(); showToast('Back to your initials.'); });
+document.querySelector('#avatar-upgrade').addEventListener('click', () => { closeModal(); openTab('premium'); setPremiumTab('pricing'); });
+
+// ---- Badges: earned from real activity, visible to everyone ----
+const badgeCatalog = [
+	{ id: 'first-session', name: 'First Rep', icon: '🎯', tier: 'bronze', description: 'Complete your very first workout. Everyone starts somewhere.', test: (stats) => stats.total >= 1, progress: (stats) => `${Math.min(stats.total, 1)} / 1 workout` },
+	{ id: 'ten-month', name: 'Ten a Month', icon: '🔟', tier: 'silver', description: 'Train more than 10 times within a single calendar month.', test: (stats) => stats.bestMonth >= 10, progress: (stats) => `${stats.bestMonth} / 10 in your best month` },
+	{ id: 'one-year', name: 'One Year Strong', icon: '🎂', tier: 'gold', description: 'Stay a Forge member for a full year. Loyalty counts.', test: (stats) => stats.daysAsMember >= 365, progress: (stats) => `${stats.daysAsMember} / 365 days as a member` },
+	{ id: 'premium', name: 'Forge Elite', icon: '👑', tier: 'elite', description: 'Hold an active Forge Premium subscription. The full toolkit, unlocked.', test: (stats) => stats.premium, progress: (stats) => (stats.premium ? 'Subscription active' : 'Not subscribed yet') },
+	{ id: 'goal-crusher', name: 'Goal Crusher', icon: '🏆', tier: 'gold', description: 'Set a goal inside Forge and mark it achieved.', test: (stats) => stats.goalsDone >= 1, progress: (stats) => `${stats.goalsDone} goal${stats.goalsDone === 1 ? '' : 's'} achieved` },
+	{ id: 'week-warrior', name: 'Week Warrior', icon: '🔥', tier: 'silver', description: 'Hit a seven day training streak without missing a day.', test: (stats) => stats.bestStreak >= 7, progress: (stats) => `${stats.bestStreak} / 7 day streak` },
+	{ id: 'quarter-century', name: 'Twenty-Five Club', icon: '⚡', tier: 'silver', description: 'Log 25 completed sessions in total.', test: (stats) => stats.total >= 25, progress: (stats) => `${stats.total} / 25 workouts` },
+	{ id: 'century', name: 'Century Club', icon: '💯', tier: 'gold', description: 'Reach 100 completed workouts. Serious mileage.', test: (stats) => stats.total >= 100, progress: (stats) => `${stats.total} / 100 workouts` },
+	{ id: 'record-breaker', name: 'Record Breaker', icon: '📈', tier: 'bronze', description: 'Set your first personal best on any lift.', test: (stats) => stats.prCount >= 1, progress: (stats) => `${stats.prCount} personal best${stats.prCount === 1 ? '' : 's'}` },
+	{ id: 'early-bird', name: 'Early Bird', icon: '🌅', tier: 'bronze', description: 'Finish a workout before 8 in the morning.', test: (stats) => stats.earlySession, progress: (stats) => (stats.earlySession ? 'Earned' : 'No session before 08:00 yet') },
+	{ id: 'night-owl', name: 'Night Owl', icon: '🌙', tier: 'bronze', description: 'Finish a workout after 9 in the evening.', test: (stats) => stats.lateSession, progress: (stats) => (stats.lateSession ? 'Earned' : 'No session after 21:00 yet') },
+	{ id: 'marathon', name: 'Endurance', icon: '⏳', tier: 'silver', description: 'Complete a single session lasting over an hour.', test: (stats) => stats.longestSession >= 3600, progress: (stats) => `${Math.round(stats.longestSession / 60)} / 60 minutes in your longest session` },
+	{ id: 'architect', name: 'Architect', icon: '🧱', tier: 'bronze', description: 'Build five different workout templates.', test: (stats) => stats.templates >= 5, progress: (stats) => `${stats.templates} / 5 workouts built` },
+	{ id: 'social', name: 'Training Partner', icon: '🤝', tier: 'bronze', description: 'Connect with three friends inside Forge.', test: (stats) => stats.friends >= 3, progress: (stats) => `${stats.friends} / 3 friends` },
+	{ id: 'planner', name: 'The Planner', icon: '🗓️', tier: 'silver', description: 'Schedule and complete ten sessions on your calendar.', test: (stats) => stats.calendarDone >= 10, progress: (stats) => `${stats.calendarDone} / 10 scheduled sessions completed` },
+];
+
+function badgeStats() {
+	const reports = loadReports();
+	const profile = JSON.parse(localStorage.getItem('forge-profile') || '{}');
+	const prs = JSON.parse(localStorage.getItem(prsKey()) || '{}');
+	const calendar = (() => { try { return JSON.parse(localStorage.getItem(calendarKey()) || '{}'); } catch (error) { return {}; } })();
+
+	const months = {};
+	reports.forEach((report) => {
+		const date = new Date(report.date);
+		const key = `${date.getFullYear()}-${date.getMonth()}`;
+		months[key] = (months[key] || 0) + 1;
+	});
+
+	// Longest streak ever, not just the current one.
+	const days = [...new Set(reports.map((report) => new Date(report.date).toDateString()))]
+		.map((value) => new Date(value).setHours(0, 0, 0, 0)).sort((a, b) => a - b);
+	let bestStreak = days.length ? 1 : 0;
+	let run = days.length ? 1 : 0;
+	for (let index = 1; index < days.length; index += 1) {
+		run = days[index] - days[index - 1] === 86400000 ? run + 1 : 1;
+		bestStreak = Math.max(bestStreak, run);
+	}
+
+	return {
+		total: reports.length,
+		bestMonth: Math.max(0, ...Object.values(months)),
+		bestStreak,
+		prCount: Object.keys(prs).length,
+		premium: isPremium(),
+		goalsDone: loadGoals().filter((goal) => goal.done).length,
+		templates: loadWorkouts().length,
+		friends: loadFriends().length,
+		calendarDone: Object.values(calendar).filter((entry) => entry.status === 'training' && entry.completed).length,
+		longestSession: Math.max(0, ...reports.map((report) => report.elapsed || report.duration || 0)),
+		earlySession: reports.some((report) => new Date(report.date).getHours() < 8),
+		lateSession: reports.some((report) => new Date(report.date).getHours() >= 21),
+		daysAsMember: profile.joined ? Math.floor((Date.now() - new Date(profile.joined).getTime()) / 86400000) : 0,
+	};
+}
+
+function earnedKey() { return `forge-badges-${currentUserKey()}`; }
+
+function renderBadges() {
+	const grid = document.querySelector('#badge-grid');
+	if (!grid) return;
+	const stats = badgeStats();
+	const earned = badgeCatalog.filter((badge) => badge.test(stats));
+	document.querySelector('#badge-count').textContent = `${earned.length} / ${badgeCatalog.length}`;
+
+	// Announce anything newly unlocked since last time.
+	let seen = [];
+	try { seen = JSON.parse(localStorage.getItem(earnedKey()) || '[]'); } catch (error) { seen = []; }
+	const fresh = earned.filter((badge) => !seen.includes(badge.id));
+	if (fresh.length) {
+		localStorage.setItem(earnedKey(), JSON.stringify(earned.map((badge) => badge.id)));
+		fresh.forEach((badge, index) => setTimeout(() => showToast(`${badge.icon} Badge unlocked: ${badge.name}`), 1200 + index * 2200));
+	}
+
+	grid.innerHTML = badgeCatalog.map((badge) => {
+		const unlocked = badge.test(stats);
+		return `<button type="button" class="badge-tile ${badge.tier}${unlocked ? ' unlocked' : ' locked'}" data-badge="${badge.id}"><span class="badge-icon">${unlocked ? badge.icon : '🔒'}</span><b>${badge.name}</b></button>`;
+	}).join('');
+
+	grid.querySelectorAll('[data-badge]').forEach((button) => button.addEventListener('click', () => {
+		const badge = badgeCatalog.find((item) => item.id === button.dataset.badge);
+		const unlocked = badge.test(stats);
+		document.querySelector('#badge-hero').className = `badge-hero ${badge.tier}${unlocked ? ' unlocked' : ' locked'}`;
+		document.querySelector('#badge-hero').textContent = unlocked ? badge.icon : '🔒';
+		document.querySelector('#badge-title').textContent = badge.name;
+		document.querySelector('#badge-desc').textContent = badge.description;
+		document.querySelector('#badge-status').innerHTML = unlocked
+			? `<span class="badge-earned">✓ Unlocked</span><small>${badge.progress(stats)}</small>`
+			: `<span class="badge-pending">Locked</span><small>${badge.progress(stats)}</small>`;
+		showModal('badge-modal');
+	}));
+}
+
 const tabs = document.querySelectorAll('[data-tab]');
 const navItems = document.querySelectorAll('.nav-item');
 const contents = document.querySelectorAll('.tab-content');
@@ -12,7 +184,7 @@ function closeModal() { document.querySelector('#modal-backdrop').classList.remo
 
 // The runner owns one guided session from start to report. It deliberately keeps report data separate per account.
 document.querySelector('#modal-backdrop').insertAdjacentHTML('afterbegin', '<section class="modal-panel runner-modal" id="runner-modal"><div class="runner-head"><div><p class="eyebrow">ACTIVE WORKOUT</p><h2 id="runner-title">Push strength</h2></div><button class="modal-close">×</button></div><div class="runner-meta"><span id="runner-progress">Exercise 1 of 1</span><div class="timer-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-fill" id="runner-ring" cx="60" cy="60" r="52"/></svg><strong id="runner-timer">00:00</strong></div></div><div id="hydration-banner" class="hydration-banner"><span class="hydration-icon">💧</span><div><b>Halfway there — drink some water</b><span>A few sips now keeps your strength up for the rest of the session.</span></div><button type="button" class="hydration-close" aria-label="Dismiss">×</button></div><div id="runner-exercise-list"></div><p class="runner-status" id="runner-status"></p><button class="secondary-button full" id="runner-finish">Finish workout</button></section><section class="modal-panel report-modal" id="report-modal"><button class="modal-close">×</button><p class="eyebrow">WORKOUT REPORT</p><h2>Session complete</h2><div class="report-summary" id="report-summary"></div><button class="primary-button full" id="report-done">Done</button></section><section class="modal-panel reports-modal" id="reports-modal"><button class="modal-close">×</button><p class="eyebrow">SAVED REPORTS</p><h2>Your workout history</h2><div id="reports-list"></div></section>');
-document.body.insertAdjacentHTML('beforeend', '<div class="menu-sheet" id="menu-sheet"><button class="menu-close" id="menu-close">×</button><p class="eyebrow">FORGE MENU</p><h2>More sections</h2><div class="menu-grid"><button data-menu-tab="social">♧ <span>Social</span></button><button data-menu-tab="goals">◎ <span>Goals</span></button><button data-menu-tab="premium">◆ <span>Premium</span></button><button id="open-reports">▤ <span>Reports</span></button><button data-menu-tab="profile">● <span>Profile</span></button></div></div>');
+document.body.insertAdjacentHTML('beforeend', '<div class="menu-sheet" id="menu-sheet"><button class="menu-close" id="menu-close">×</button><p class="eyebrow">FORGE MENU</p><h2>More sections</h2><div class="menu-grid"><button data-menu-tab="coach">✦ <span>AI Coach</span></button><button data-menu-tab="social">♧ <span>Social</span></button><button data-menu-tab="goals">◎ <span>Goals</span></button><button data-menu-tab="premium">◆ <span>Premium</span></button><button id="open-reports">▤ <span>Reports</span></button><button data-menu-tab="profile">● <span>Profile</span></button></div></div>');
 const menuSheet = document.querySelector('#menu-sheet');
 function openMenu() { menuSheet.classList.add('open'); }
 function closeMenu() { menuSheet.classList.remove('open'); }
@@ -180,9 +352,8 @@ function finishGuidedWorkout() {
 	const reports = JSON.parse(localStorage.getItem(key) || '[]');
 	reports.unshift(report);
 	localStorage.setItem(key, JSON.stringify(reports.slice(0, 50)));
-	const count = Number(localStorage.getItem('forge-workout-count') || '14') + 1;
-	localStorage.setItem('forge-workout-count', String(count));
-	document.querySelectorAll('#workouts-count, #profile-workouts-count, #profile-page-workouts-count').forEach((element) => { element.textContent = count; });
+	refreshStats();
+	renderBadges();
 	document.querySelector('#report-summary').innerHTML = `<div><b>${formatTime(report.elapsed)}</b><span>${t('Session length')}</span></div><div><b>${report.reps}</b><span>${t('Total reps')}</span></div><div><b>${report.sets}</b><span>${t('Sets finished')}</span></div><div class="report-exercise-stats">${report.exerciseStats.map((stat) => `<article><b>${categoryIcons[stat.category] || '🏋️'} ${stat.name}</b><span>${stat.sets}/${stat.planned} ${t('sets')} · ${stat.reps} ${t('reps')} · ${formatTime(stat.time)} ${t('working time')}</span><small>${stat.setTimes.map((time, index) => `${t('Set')} ${index + 1}: ${formatTime(time)}`).join(' · ')}</small><small>${t('Fastest')}: ${formatTime(stat.best)} · ${t('Average')}: ${formatTime(stat.average)}</small></article>`).join('')}</div><p>${report.details}</p>`;
 	closeModal();
 	showModal('report-modal');
@@ -205,7 +376,7 @@ document.querySelectorAll('.premium-tab').forEach((button) => button.addEventLis
 document.querySelectorAll('[data-ptab-link]').forEach((button) => button.addEventListener('click', () => setPremiumTab(button.dataset.ptabLink)));
 
 document.querySelector('#subscribe-button').addEventListener('click', () => { if (localStorage.getItem('forge-premium') === 'active') { showToast('Forge Premium is already active.'); return; } const yearly = localStorage.getItem('forge-billing') === 'yearly'; document.querySelector('#payment-summary').textContent = yearly ? '€64.69 / year · save 10%' : '€5.99 / month'; showModal('payment-modal'); });
-document.querySelector('#payment-form').addEventListener('submit', (event) => { event.preventDefault(); const plan = localStorage.getItem('forge-billing') || 'monthly'; localStorage.setItem('forge-premium', 'active'); localStorage.setItem('forge-subscription', JSON.stringify({ status: 'active', plan, started: new Date().toISOString(), lastFour: document.querySelector('#card-number').value.replace(/\D/g, '').slice(-4) })); event.target.reset(); closeModal(); updateSubscriptionButton(); renderNutritionLock(); showToast('Payment accepted. Premium is active.'); });
+document.querySelector('#payment-form').addEventListener('submit', (event) => { event.preventDefault(); const plan = localStorage.getItem('forge-billing') || 'monthly'; localStorage.setItem('forge-premium', 'active'); localStorage.setItem('forge-subscription', JSON.stringify({ status: 'active', plan, started: new Date().toISOString(), lastFour: document.querySelector('#card-number').value.replace(/\D/g, '').slice(-4) })); event.target.reset(); closeModal(); updateSubscriptionButton(); renderNutritionLock(); applyAvatar(); renderBadges(); initCoach(); showToast('Payment accepted. Premium is active.'); });
 document.querySelectorAll('.billing-option').forEach((option) => option.addEventListener('click', () => { document.querySelectorAll('.billing-option').forEach((item) => item.classList.remove('active')); option.classList.add('active'); localStorage.setItem('forge-billing', option.dataset.billing); updateSubscriptionButton(); showToast(`${option.dataset.billing === 'yearly' ? 'Yearly' : 'Monthly'} plan selected.`); }));
 const savedBilling = localStorage.getItem('forge-billing') || 'monthly'; document.querySelector(`.billing-option[data-billing="${savedBilling}"]`)?.classList.add('active'); updateSubscriptionButton();
 document.querySelector('#save-trackers').addEventListener('click', () => { const tracking = Object.fromEntries(trackerFields.map((field) => [field, document.querySelector(`#${field}-input`).value || 0])); localStorage.setItem('forge-tracking', JSON.stringify(tracking)); showToast('Today\'s tracking saved.'); });
@@ -283,8 +454,10 @@ function renderWorkoutTemplates() {
 	container.querySelectorAll('[data-delete]').forEach((button) => button.addEventListener('click', () => {
 		saveWorkouts(loadWorkouts().filter((item) => item.id !== Number(button.dataset.delete)));
 		renderWorkoutTemplates();
+		renderBadges();
 		showToast('Workout deleted.');
 	}));
+	if (typeof renderNextWorkout === 'function') renderNextWorkout();
 }
 
 // ---- Builder: name the session, then add each exercise with its own sets, reps and rest ----
@@ -329,6 +502,7 @@ function persistDraft() {
 	if (existingIndex >= 0) list[existingIndex] = draft; else list.unshift(draft);
 	saveWorkouts(list);
 	renderWorkoutTemplates();
+	renderBadges();
 }
 
 document.querySelector('#new-workout').addEventListener('click', () => openBuilder(null));
@@ -432,37 +606,58 @@ function updateTopLift(exerciseName, weight) {
 	document.querySelector('#top-lift-name').textContent = `${exerciseName} · new personal best`;
 }
 function checkPersonalRecord(exerciseName, weight) {
-	const prs = JSON.parse(localStorage.getItem('forge-prs') || '{}');
+	const prs = JSON.parse(localStorage.getItem(prsKey()) || '{}');
 	if (!prs[exerciseName] || weight > prs[exerciseName]) {
 		prs[exerciseName] = weight;
-		localStorage.setItem('forge-prs', JSON.stringify(prs));
+		localStorage.setItem(prsKey(), JSON.stringify(prs));
 		updateTopLift(exerciseName, weight);
 		setTimeout(() => showToast(`🎉 New personal best: ${exerciseName} at ${weight} kg!`), 2300);
 	}
 }
-const savedPrs = JSON.parse(localStorage.getItem('forge-prs') || '{}');
-const bestPr = Object.entries(savedPrs).sort((a, b) => b[1] - a[1])[0];
-if (bestPr) updateTopLift(bestPr[0], bestPr[1]);
-
-const savedWorkoutCount = localStorage.getItem('forge-workout-count');
-if (savedWorkoutCount) document.querySelectorAll('#workouts-count, #profile-workouts-count, #profile-page-workouts-count').forEach((element) => { element.textContent = savedWorkoutCount; });
-
 renderWorkoutTemplates();
-// The home-screen button jumps to the Workout tab so the user picks or builds a session.
-document.querySelector('#start-workout').addEventListener('click', () => {
-	const list = loadWorkouts();
-	if (list.length === 1) { startWorkout(list[0]); return; }
-	openTab('workout');
-	if (!list.length) openBuilder(null);
-});
+refreshStats();
 
 document.querySelector('#add-goal').addEventListener('click', () => showModal('goal-modal'));
-document.querySelector('#goal-form').addEventListener('submit', (event) => { event.preventDefault(); const goal = { name: document.querySelector('#goal-name').value, date: document.querySelector('#goal-date').value }; const goals = JSON.parse(localStorage.getItem('forge-goals') || '[]'); goals.push(goal); localStorage.setItem('forge-goals', JSON.stringify(goals)); addGoalCard(goal, goals.length + 2); event.target.reset(); closeModal(); showToast('Goal created.'); });
-function addGoalCard(goal, number) { const card = document.createElement('div'); card.className = 'goal-card'; card.innerHTML = `<div class="goal-icon">${String(number).padStart(2, '0')}</div><div><b>${goal.name}</b><span>Target: ${goal.date}</span><div class="progress-track"><i style="width:4%"></i></div><small>4% complete</small></div><button class="more-button">...</button>`; document.querySelector('#goals-tab .secondary-button').before(card); }
-JSON.parse(localStorage.getItem('forge-goals') || '[]').forEach((goal, index) => addGoalCard(goal, index + 3));
+function goalsKey() { return `forge-goals-${currentUserKey()}`; }
+function loadGoals() { try { return JSON.parse(localStorage.getItem(goalsKey()) || '[]'); } catch (error) { return []; } }
+function renderGoals() {
+	const goals = loadGoals();
+	const list = document.querySelector('#goal-list');
+	if (!goals.length) { list.innerHTML = '<p class="empty-state">No goals yet. Create one to give your training a target.</p>'; return; }
+	list.innerHTML = goals.map((goal, index) => `<div class="goal-card${goal.done ? ' goal-done' : ''}"><div class="goal-icon${goal.done ? '' : index % 2 ? ' coral' : ''}">${goal.done ? '✓' : String(index + 1).padStart(2, '0')}</div><div><b>${goal.name}</b><span>Target date: ${goal.date || 'not set'}</span><div class="progress-track${index % 2 && !goal.done ? ' coral-track' : ''}"><i style="width:${goal.done ? 100 : 0}%"></i></div><small>${goal.done ? 'Achieved' : 'In progress'}</small><div class="goal-actions"><button type="button" class="goal-toggle" data-toggle="${index}">${goal.done ? 'Reopen' : 'Mark achieved'}</button></div></div><button type="button" class="more-button" data-goal="${index}">×</button></div>`).join('');
+	list.querySelectorAll('[data-goal]').forEach((button) => button.addEventListener('click', () => {
+		const remaining = loadGoals().filter((item, index) => index !== Number(button.dataset.goal));
+		localStorage.setItem(goalsKey(), JSON.stringify(remaining));
+		renderGoals();
+		renderBadges();
+		showToast('Goal removed.');
+	}));
+	list.querySelectorAll('[data-toggle]').forEach((button) => button.addEventListener('click', () => {
+		const all = loadGoals();
+		const goal = all[Number(button.dataset.toggle)];
+		goal.done = !goal.done;
+		localStorage.setItem(goalsKey(), JSON.stringify(all));
+		renderGoals();
+		renderBadges();
+		showToast(goal.done ? `🏆 Goal achieved: ${goal.name}` : 'Goal reopened.');
+	}));
+}
+document.querySelector('#goal-form').addEventListener('submit', (event) => {
+	event.preventDefault();
+	const goals = loadGoals();
+	goals.push({ name: document.querySelector('#goal-name').value, date: document.querySelector('#goal-date').value });
+	localStorage.setItem(goalsKey(), JSON.stringify(goals));
+	renderGoals();
+	renderBadges();
+	event.target.reset();
+	closeModal();
+	showToast('Goal created.');
+});
+renderGoals();
+
 document.querySelector('#edit-profile').addEventListener('click', () => { document.querySelector('#edit-name').value = document.querySelector('#profile-name').textContent; document.querySelector('#edit-height').value = parseInt(document.querySelector('#profile-height').textContent, 10); document.querySelector('#edit-weight').value = parseInt(document.querySelector('#profile-weight').textContent, 10); document.querySelector('#edit-focus').value = document.querySelector('#profile-focus').textContent; document.querySelector('#edit-gender').value = ['Male','Female','Other'].includes(document.querySelector('#profile-gender').textContent) ? document.querySelector('#profile-gender').textContent : 'Other'; document.querySelector('#edit-target').value = parseInt(document.querySelector('#profile-page-target').textContent, 10) || 4; showModal('profile-modal'); });
 document.querySelector('#profile-form').addEventListener('submit', (event) => { event.preventDefault(); const values = { name: document.querySelector('#edit-name').value, height: document.querySelector('#edit-height').value, weight: document.querySelector('#edit-weight').value, focus: document.querySelector('#edit-focus').value, gender: document.querySelector('#edit-gender').value, target: document.querySelector('#edit-target').value }; localStorage.setItem('forge-profile', JSON.stringify(values)); const sessionEmail = localStorage.getItem('forge-session'); if (sessionEmail) { const accounts = loadAccounts(); if (accounts[sessionEmail]) { accounts[sessionEmail].profile = { ...accounts[sessionEmail].profile, ...values }; saveAccounts(accounts); } } updateProfile(values); closeModal(); showToast('Profile updated.'); });
-function updateProfile(values) { values.target = values.target || 4; const initials = values.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(); document.querySelectorAll('#profile-name, #profile-page-name').forEach((element) => { element.textContent = values.name; }); document.querySelectorAll('#profile-height, #profile-page-height').forEach((element) => { element.textContent = `${values.height} cm`; }); document.querySelectorAll('#profile-weight, #profile-page-weight').forEach((element) => { element.textContent = `${values.weight} kg`; }); document.querySelectorAll('#profile-focus, #profile-page-focus').forEach((element) => { element.textContent = values.focus; }); document.querySelectorAll('#profile-gender, #profile-page-gender').forEach((element) => { element.textContent = values.gender || '—'; }); document.querySelector('#profile-page-target').textContent = `${values.target} sessions`; document.querySelector('h1').innerHTML = `Good morning, ${values.name.split(' ')[0]}<span class="accent">.</span>`; document.querySelectorAll('.avatar, .large-avatar').forEach((element) => { element.textContent = initials; }); }
+function updateProfile(values) { values.target = values.target || 4; const initials = values.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(); document.querySelectorAll('#profile-name, #profile-page-name').forEach((element) => { element.textContent = values.name; }); document.querySelectorAll('#profile-height, #profile-page-height').forEach((element) => { element.textContent = `${values.height} cm`; }); document.querySelectorAll('#profile-weight, #profile-page-weight').forEach((element) => { element.textContent = `${values.weight} kg`; }); document.querySelectorAll('#profile-focus, #profile-page-focus').forEach((element) => { element.textContent = values.focus; }); document.querySelectorAll('#profile-gender, #profile-page-gender').forEach((element) => { element.textContent = values.gender || '—'; }); if (typeof applyAvatar === 'function') applyAvatar(); document.querySelector('#profile-page-target').textContent = `${values.target} sessions`; document.querySelector('h1').innerHTML = `Good morning, ${values.name.split(' ')[0]}<span class="accent">.</span>`; document.querySelectorAll('.avatar, .large-avatar').forEach((element) => { element.textContent = initials; }); }
 const savedProfile = JSON.parse(localStorage.getItem('forge-profile') || 'null'); if (savedProfile) updateProfile(savedProfile);
 
 // ---- Calendar: each day can be a training day (with a time), a rest day, or empty ----
@@ -471,15 +666,7 @@ const DAYS_IN_MONTH = 30;
 const MONTH_LABEL = 'September';
 function loadCalendar() {
 	try {
-		const stored = localStorage.getItem(calendarKey());
-		if (stored === null) {
-			const seed = {};
-			[2, 4, 7, 9, 14, 16].forEach((day) => { seed[day] = { status: 'training', time: '18:00', duration: 60, note: '' }; });
-			[6, 13, 20].forEach((day) => { seed[day] = { status: 'rest' }; });
-			localStorage.setItem(calendarKey(), JSON.stringify(seed));
-			return seed;
-		}
-		return JSON.parse(stored);
+		return JSON.parse(localStorage.getItem(calendarKey()) || '{}');
 	} catch (error) { return {}; }
 }
 function saveCalendar(data) { localStorage.setItem(calendarKey(), JSON.stringify(data)); }
@@ -584,6 +771,7 @@ document.querySelector('#day-mark-done').addEventListener('click', () => {
 	entry.completed = !entry.completed;
 	saveCalendar(calendar);
 	renderCalendar();
+	renderBadges();
 	closeModal();
 	showToast(entry.completed ? `${MONTH_LABEL} ${selectedDay} marked complete.` : `${MONTH_LABEL} ${selectedDay} reopened.`);
 });
@@ -606,8 +794,18 @@ document.querySelector('#reminder-form').addEventListener('submit', (event) => {
 const savedReminder = JSON.parse(localStorage.getItem('forge-reminder-settings') || 'null'); if (savedReminder) document.querySelector('#reminder-status').textContent = `Every ${savedReminder.days} at ${savedReminder.time}`;
 
 document.querySelector('#find-friend').addEventListener('click', () => { const query = document.querySelector('#friend-search').value.trim(); const result = document.querySelector('#friend-result'); if (!query) { result.innerHTML = ''; return; } result.innerHTML = `<div class="search-result"><span class="friend-avatar">${query.slice(0, 2).toUpperCase()}</span><span><b>${query}</b><small>Forge member</small></span><button class="invite-button" data-friend="${query}">Add friend</button></div>`; result.querySelector('.invite-button').addEventListener('click', () => { saveFriend(query); result.innerHTML = '<p class="social-confirmation">Friend request sent.</p>'; }); });
-function saveFriend(name) { const friends = JSON.parse(localStorage.getItem('forge-friends') || '[]'); if (!friends.includes(name)) { friends.push(name); localStorage.setItem('forge-friends', JSON.stringify(friends)); document.querySelector('#friend-count').textContent = `${friends.length + 2} FRIENDS`; } showToast(`Friend request sent to ${name}.`); }
-document.querySelectorAll('.invite-button').forEach((button) => button.addEventListener('click', () => { document.querySelector('#invite-name').value = button.dataset.friend; showModal('invite-modal'); }));
+function friendsKey() { return `forge-friends-${currentUserKey()}`; }
+function loadFriends() { try { return JSON.parse(localStorage.getItem(friendsKey()) || '[]'); } catch (error) { return []; } }
+function saveFriend(name, detail) { const friends = loadFriends(); if (!friends.some((item) => item.name === name)) { friends.push({ name, detail: detail || 'Forge member' }); localStorage.setItem(friendsKey(), JSON.stringify(friends)); } renderFriends(); }
+function renderFriends() {
+	const friends = loadFriends();
+	document.querySelector('#friend-count').textContent = `${friends.length} ${friends.length === 1 ? 'FRIEND' : 'FRIENDS'}`;
+	const list = document.querySelector('#friend-list');
+	if (!friends.length) { list.innerHTML = '<p class="empty-state">No friends yet. Search above to connect with other members.</p>'; return; }
+	list.innerHTML = friends.map((friend) => `<div class="friend-row"><span class="friend-avatar">${initials(friend.name)}</span><span><b>${friend.name}</b><small>${friend.detail}</small></span><button type="button" class="invite-button" data-friend="${friend.name}">Invite</button></div>`).join('');
+	list.querySelectorAll('.invite-button').forEach((button) => button.addEventListener('click', () => { document.querySelector('#invite-name').value = button.dataset.friend; showModal('invite-modal'); }));
+}
+
 document.querySelector('#invite-friend').addEventListener('click', () => showModal('invite-modal'));
 document.querySelector('#invite-form').addEventListener('submit', (event) => { event.preventDefault(); const invite = { name: document.querySelector('#invite-name').value, contact: document.querySelector('#invite-contact').value, day: document.querySelector('#invite-day').value }; localStorage.setItem('forge-last-invite', JSON.stringify(invite)); event.target.reset(); closeModal(); showToast(`Invitation sent to ${invite.name}.`); });
 
@@ -744,24 +942,371 @@ renderGoalPicker();
 renderNutritionSummary();
 renderRecipes();
 
+// ---- AI Coach ----
+// Answers come from a backend endpoint when one is configured. Without a server the app falls
+// back to a built-in knowledge base so the feature still works offline and in the preview build.
+const COACH_ENDPOINT = window.FORGE_COACH_ENDPOINT || null;
+const FREE_DAILY_LIMIT = 3;
+
+const coachTopics = [
+	{
+		id: 'sets',
+		match: ['how many sets', 'set count', 'sets per', 'volume', 'πόσα σετ', 'σετ'],
+		title: 'Sets and weekly volume',
+		answer: 'For muscle growth, aim for roughly 10 to 20 hard sets per muscle group per week. Below about 10 you tend to maintain rather than grow; much above 20 the extra sets add fatigue faster than they add muscle. Spread that across two sessions per week rather than one, since training a muscle twice weekly beats hitting it once.',
+		premium: 'Start at the low end and add one or two sets per muscle group every couple of weeks only while your performance keeps improving. When your reps at a given weight stall for two sessions in a row and you feel run down, that is your ceiling for now. Drop back by about a third for a week, then build again. Track this per muscle group, not for your whole programme, because your shoulders and your legs recover at different rates.',
+	},
+	{
+		id: 'reps',
+		match: ['how many reps', 'rep range', 'reps for', 'επαναλήψεις'],
+		title: 'Rep ranges',
+		answer: 'Muscle grows across a wide rep range, roughly 5 to 30, as long as you take sets close to failure. Use 5 to 8 reps for strength on the big lifts, 8 to 15 for most hypertrophy work, and 15 to 25 on isolation and machine exercises where heavy loads are awkward.',
+		premium: 'Match the range to the exercise rather than applying one rule everywhere. Compound lifts like squats and deadlifts respond well to lower reps because form breaks down when you are deep into a set. Isolation work such as lateral raises or curls is safer and more effective at higher reps, where the muscle fatigues before your joints complain. A practical split is heavy compounds first, then moderate accessories, then high-rep finishers.',
+	},
+	{
+		id: 'rest',
+		match: ['rest between', 'how long rest', 'rest time', 'ξεκούραση', 'ανάπαυση'],
+		title: 'Rest between sets',
+		answer: 'Rest 2 to 3 minutes on heavy compound lifts, 1 to 2 minutes on accessory work, and 45 to 90 seconds on isolation exercises. Cutting rest short lowers the weight you can handle on the next set, which costs you more than the time you save.',
+		premium: 'The honest signal is your breathing and your performance, not the clock. If you cannot get within one or two reps of your previous set, you rested too little. On a heavy squat or deadlift day, three full minutes is not laziness, it is what lets you accumulate quality volume. Where you can save time is by pairing unrelated exercises, for example a set of rows while resting from a leg exercise, since they do not compete for the same recovery.',
+	},
+	{
+		id: 'protein',
+		match: ['protein', 'πρωτεΐνη', 'πρωτεινη'],
+		title: 'Protein intake',
+		answer: 'Aim for 1.6 to 2.2 grams of protein per kilogram of bodyweight per day. For an 80 kg person that is roughly 130 to 175 grams. Spread it across three to five meals rather than loading it all into dinner.',
+		premium: 'When you are in a calorie deficit, push toward the upper end, around 2.2 to 2.4 grams per kilogram, because protein protects muscle when energy is scarce and it keeps you fuller than carbohydrate or fat. Aim for 25 to 40 grams per meal, which is enough to fully stimulate muscle repair. Total daily intake matters far more than timing, so hitting your number matters more than eating immediately after training.',
+	},
+	{
+		id: 'calories',
+		match: ['calorie', 'deficit', 'surplus', 'bulk', 'cut', 'θερμίδ', 'χάσω κιλά', 'αδυνατ'],
+		title: 'Calories for your goal',
+		answer: 'To lose fat, eat about 300 to 500 kcal below maintenance, which gives roughly half a kilo of loss per week. To build muscle, eat 200 to 400 kcal above maintenance. Larger deficits mostly cost you muscle and training quality; larger surpluses mostly add fat.',
+		premium: 'Estimate maintenance at roughly 30 to 33 kcal per kilogram of bodyweight if you train several times a week, then adjust based on what the scale actually does over two to three weeks. Do not react to daily fluctuations, since water and food weight swing a kilo or more. If your weekly average has not moved after three weeks, change intake by about 200 kcal. Keep protein fixed and adjust carbohydrate and fat around it.',
+	},
+	{
+		id: 'soreness',
+		match: ['sore', 'doms', 'πιάστηκα', 'πόνος μυ', 'μυϊκός πόνος'],
+		title: 'Muscle soreness',
+		answer: 'Soreness peaks 24 to 48 hours after training and is normal, especially after new exercises. It is not a measure of how good the session was. Light movement, sleep, adequate protein and staying hydrated help more than stretching or ice.',
+		premium: 'You can train a sore muscle if the soreness is mild and fades once you warm up. Skip or lighten the session if the soreness is sharp, one-sided, sits near a joint, or has not eased after four days, as that pattern points to injury rather than ordinary muscle damage. Soreness also falls sharply after the first few weeks of a new programme, which is adaptation, not a sign you have stopped progressing.',
+	},
+	{
+		id: 'frequency',
+		match: ['how often', 'times a week', 'frequency', 'πόσες φορές', 'συχνότητα'],
+		title: 'Training frequency',
+		answer: 'Three to five sessions a week suits almost everyone. Beginners do well on three full-body days; more experienced lifters usually split into four or five sessions. What matters most is the schedule you can repeat for months, not the theoretically optimal one.',
+		premium: 'Choose frequency by the time you realistically have, then fit the split to it. Three days works best as full body. Four days suits an upper and lower split repeated twice. Five days allows push, pull, legs plus two extra sessions. Training each muscle twice weekly beats once, so avoid classic one-muscle-per-day splits unless you are training six days. Build the week around your two hardest sessions and place them where you are most rested.',
+	},
+	{
+		id: 'warmup',
+		match: ['warm up', 'warmup', 'stretch', 'ζέσταμα', 'διατάσεις'],
+		title: 'Warming up',
+		answer: 'Spend 5 to 10 minutes raising your heart rate, then do two or three progressively heavier warm-up sets of your first exercise. Save long static stretching for after training, since holding stretches before heavy lifting can temporarily reduce strength.',
+		premium: 'A practical structure is five minutes of easy cardio, then dynamic movement for the joints you are about to load, then ramp sets. For a working weight of 100 kg you might do the empty bar, then 40, 60 and 80 kg for a few reps each. The goal is to prepare the movement pattern without accumulating fatigue, so warm-up sets should feel easy and stop well short of failure.',
+	},
+	{
+		id: 'form',
+		match: ['form', 'technique', 'proper', 'τεχνική', 'σωστή εκτέλεση'],
+		title: 'Technique',
+		answer: 'Control the weight through the full range you can manage without pain, keep the movement consistent between reps, and only add load once the pattern is stable. If your form changes noticeably on the last reps, the weight is too heavy for that set.',
+		premium: 'Film a set from the side occasionally. It reveals things you cannot feel, such as a hip rising early in a squat or elbows drifting on a press. Choose your ranges based on your own anatomy rather than copying someone else, since limb lengths change what a good position looks like. Pain that is sharp, joint-centred or one-sided is a signal to stop; general muscular burning is not.',
+	},
+	{
+		id: 'sleep',
+		match: ['sleep', 'recovery', 'rest day', 'ύπνος', 'ξεκούραση μέρα'],
+		title: 'Sleep and recovery',
+		answer: 'Sleep is the single biggest recovery factor. Seven to nine hours is the target, and consistently getting under six reduces strength, appetite control and motivation. One or two full rest days per week is normal and productive.',
+		premium: 'If sleep is genuinely limited, lower your training volume rather than pushing through, because sets you cannot recover from produce fatigue instead of progress. Warning signs of under-recovery are a resting heart rate that stays elevated, weights that feel heavier than usual for several sessions, and a flat mood. On light days, easy walking or mobility work aids recovery more than complete inactivity.',
+	},
+	{
+		id: 'plateau',
+		match: ['plateau', 'stuck', 'not progressing', 'stall', 'κόλλησα', 'στασιμότητα'],
+		title: 'Breaking a plateau',
+		answer: 'Real plateaus are usually recovery problems, not programme problems. Before changing exercises, check your sleep, calories and protein, and whether you are actually adding weight or reps over time. If those are solid, take a lighter week and then rebuild.',
+		premium: 'Work through it in order. First confirm you are tracking, because most stalls are invisible without records. Second, take a deload week at about two thirds of your usual volume. Third, change the stimulus rather than everything at once: adjust the rep range, swap a barbell variation for a dumbbell one, or add a set. Give any change four to six weeks before judging it, since shorter cycles never show whether it worked.',
+	},
+	{
+		id: 'cardio',
+		match: ['cardio', 'running', 'run', 'steps', 'τρέξιμο', 'καρδιο'],
+		title: 'Cardio alongside lifting',
+		answer: 'Cardio does not ruin muscle growth at reasonable volumes. Two or three sessions of 20 to 30 minutes fits comfortably with lifting and improves recovery between sets. Keep hard cardio and heavy leg training on separate days where possible.',
+		premium: 'The interference effect matters mostly at high volumes of intense endurance work, particularly running, which shares fatigue with leg training. Cycling and rowing interfere less because the impact is lower. If you do both on one day, lift first when strength is the priority. Daily walking is the most underrated tool here: it adds energy expenditure and aids recovery without competing for recovery capacity.',
+	},
+	{
+		id: 'supplements',
+		match: ['supplement', 'creatine', 'whey', 'συμπλήρωμα', 'κρεατίνη'],
+		title: 'Supplements',
+		answer: 'Only a few have solid evidence behind them. Creatine monohydrate at 3 to 5 grams daily is the best supported for strength and muscle. Whey protein is convenient but is food, not magic. Caffeine helps performance. Almost everything else is optional.',
+		premium: 'Creatine needs no loading phase; take the same small dose daily at any time and it saturates within about a month. The initial weight gain of a kilo or so is water inside the muscle, not fat. Vitamin D is worth checking if you get little sun, which is common in winter. Treat protein powder as a tool for hitting your daily target when whole food is inconvenient, not as a requirement. Be sceptical of anything promising results that whole food and training cannot deliver.',
+	},
+	{
+		id: 'beginner',
+		match: ['beginner', 'start', 'new to', 'first time', 'αρχάριος', 'ξεκινάω'],
+		title: 'Starting out',
+		answer: 'Begin with three full-body sessions a week built around a few compound movements: a squat, a hinge, a push, a pull and a carry or core exercise. Two or three sets each is plenty. Focus on learning the movements and turning up consistently for the first two months.',
+		premium: 'Your first months are the highest-return period you will ever have, so do not waste them chasing complexity. Add a small amount of weight whenever you complete all your reps with good form, which will happen almost every session at first. Do not train to failure yet, since the technical cost outweighs the benefit while you are still learning patterns. Record your weights from day one, because a training log is the single habit that separates people who progress from people who repeat the same year.',
+	},
+	{
+		id: 'water',
+		match: ['water', 'hydrat', 'νερό', 'ενυδάτωση'],
+		title: 'Hydration',
+		answer: 'Aim for roughly 30 to 35 ml of water per kilogram of bodyweight daily, plus extra around training. Even mild dehydration reduces strength and endurance noticeably. Pale straw-coloured urine is a good practical indicator.',
+		premium: 'During longer or hotter sessions, drink around 500 to 700 ml per hour of training rather than trying to catch up afterwards. If you sweat heavily or train over an hour, adding a pinch of salt or an electrolyte tablet helps you retain what you drink. Overdrinking plain water in large volumes is not harmless, so use thirst and urine colour as your guide rather than forcing a fixed number.',
+	},
+];
+
+const coachChips = ['How many sets should I do?', 'How much protein do I need?', 'How long should I rest?', "I'm stuck at the same weight", 'Is cardio bad for muscle?'];
+
+function coachKey() { return `forge-coach-${currentUserKey()}`; }
+function coachUsageKey() { return `forge-coach-usage-${currentUserKey()}`; }
+function todayStamp() { return new Date().toDateString(); }
+
+function loadCoachUsage() {
+	try {
+		const usage = JSON.parse(localStorage.getItem(coachUsageKey()) || 'null');
+		if (!usage || usage.day !== todayStamp()) return { day: todayStamp(), count: 0 };
+		return usage;
+	} catch (error) { return { day: todayStamp(), count: 0 }; }
+}
+function bumpCoachUsage() {
+	const usage = loadCoachUsage();
+	usage.count += 1;
+	localStorage.setItem(coachUsageKey(), JSON.stringify(usage));
+	renderCoachQuota();
+}
+function coachRemaining() { return Math.max(0, FREE_DAILY_LIMIT - loadCoachUsage().count); }
+
+function loadCoachThread() { try { return JSON.parse(localStorage.getItem(coachKey()) || '[]'); } catch (error) { return []; } }
+function saveCoachThread(thread) { localStorage.setItem(coachKey(), JSON.stringify(thread.slice(-40))); }
+
+function renderCoachQuota() {
+	const node = document.querySelector('#coach-quota');
+	if (!node) return;
+	if (isPremium()) {
+		node.className = 'coach-quota premium';
+		node.innerHTML = '<span>👑</span><div><b>Unlimited questions</b><small>Premium answers include deeper, more specific guidance.</small></div>';
+		return;
+	}
+	const left = coachRemaining();
+	node.className = `coach-quota${left === 0 ? ' spent' : ''}`;
+	node.innerHTML = `<span>${left === 0 ? '🔒' : '💬'}</span><div><b>${left} of ${FREE_DAILY_LIMIT} questions left today</b><small>${left === 0 ? 'Your questions reset tomorrow. Premium removes the limit entirely.' : 'Premium gives unlimited questions and more detailed answers.'}</small></div><button type="button" class="quota-upgrade">Upgrade</button>`;
+	node.querySelector('.quota-upgrade')?.addEventListener('click', () => { openTab('premium'); setPremiumTab('pricing'); });
+}
+
+function renderCoachChips() {
+	const node = document.querySelector('#coach-chips');
+	if (!node) return;
+	node.innerHTML = coachChips.map((chip) => `<button type="button" class="coach-chip">${chip}</button>`).join('');
+	node.querySelectorAll('.coach-chip').forEach((button) => button.addEventListener('click', () => {
+		document.querySelector('#coach-input').value = button.textContent;
+		document.querySelector('#coach-form').requestSubmit();
+	}));
+}
+
+function renderCoachThread() {
+	const node = document.querySelector('#coach-thread');
+	if (!node) return;
+	const thread = loadCoachThread();
+	if (!thread.length) {
+		node.innerHTML = '<div class="coach-empty"><span>✦</span><b>Ask me anything about training</b><p>Sets, reps, rest, protein, calories, recovery, technique or plateaus. I only cover fitness and nutrition.</p></div>';
+		return;
+	}
+	node.innerHTML = thread.map((message) => `<div class="coach-msg ${message.role}">${message.role === 'coach' ? '<span class="coach-badge">COACH</span>' : ''}${message.text.split('\n\n').map((part) => `<p>${part}</p>`).join('')}</div>`).join('');
+	node.scrollTop = node.scrollHeight;
+}
+
+function pushCoachMessage(role, text) {
+	const thread = loadCoachThread();
+	thread.push({ role, text });
+	saveCoachThread(thread);
+	renderCoachThread();
+}
+
+// Personalises the answer with whatever the user has actually logged.
+function coachContext() {
+	const reports = loadReports();
+	const profile = JSON.parse(localStorage.getItem('forge-profile') || '{}');
+	if (!reports.length) return '';
+	const weekAgo = Date.now() - 7 * 86400000;
+	const thisWeek = reports.filter((report) => new Date(report.date).getTime() >= weekAgo).length;
+	const target = Number(profile.target) || 4;
+	if (thisWeek >= target) return `\n\nLooking at your log, you have hit ${thisWeek} sessions this week against a target of ${target}. Consistency is not your problem right now, so focus on progressing the load.`;
+	if (thisWeek === 0) return `\n\nYour log shows no sessions in the last seven days. Whatever you change, the first priority is getting back to a repeatable schedule.`;
+	return `\n\nYour log shows ${thisWeek} of ${target} planned sessions this week, so there is room to add one before changing anything else.`;
+}
+
+function findCoachTopic(question) {
+	const text = question.toLowerCase();
+	let best = null;
+	let bestScore = 0;
+	coachTopics.forEach((topic) => {
+		const score = topic.match.reduce((sum, term) => (text.includes(term) ? sum + term.length : sum), 0);
+		if (score > bestScore) { bestScore = score; best = topic; }
+	});
+	return bestScore > 0 ? best : null;
+}
+
+function localCoachAnswer(question) {
+	const topic = findCoachTopic(question);
+	if (!topic) {
+		return "I only cover training, nutrition and recovery, so I cannot help with that one. Try asking about sets and reps, rest times, protein, calories, soreness, sleep, technique, cardio, supplements or breaking a plateau.";
+	}
+	let reply = topic.answer;
+	if (isPremium()) reply += `\n\n${topic.premium}${coachContext()}`;
+	else reply += '\n\nPremium subscribers get a longer, more specific answer here, tailored to their own training log.';
+	return reply;
+}
+
+async function askCoach(question) {
+	if (COACH_ENDPOINT) {
+		// Real model call. The endpoint must live on your server so the API key is never exposed.
+		const response = await fetch(COACH_ENDPOINT, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ question, premium: isPremium(), history: loadCoachThread().slice(-6) }),
+		});
+		if (!response.ok) throw new Error(`Coach service returned ${response.status}`);
+		const data = await response.json();
+		return data.reply;
+	}
+	// Offline fallback so the feature works without a backend.
+	await new Promise((resolve) => setTimeout(resolve, 650));
+	return localCoachAnswer(question);
+}
+
+document.querySelector('#coach-form').addEventListener('submit', async (event) => {
+	event.preventDefault();
+	const input = document.querySelector('#coach-input');
+	const question = input.value.trim();
+	if (!question) return;
+
+	if (!isPremium() && coachRemaining() <= 0) {
+		showToast('Daily limit reached. Upgrade for unlimited questions.');
+		openTab('premium');
+		setPremiumTab('pricing');
+		return;
+	}
+
+	input.value = '';
+	pushCoachMessage('user', question);
+	if (!isPremium()) bumpCoachUsage();
+
+	const thread = document.querySelector('#coach-thread');
+	thread.insertAdjacentHTML('beforeend', '<div class="coach-msg coach typing" id="coach-typing"><span class="coach-badge">COACH</span><p><i></i><i></i><i></i></p></div>');
+	thread.scrollTop = thread.scrollHeight;
+
+	try {
+		const reply = await askCoach(question);
+		document.querySelector('#coach-typing')?.remove();
+		pushCoachMessage('coach', reply);
+	} catch (error) {
+		document.querySelector('#coach-typing')?.remove();
+		pushCoachMessage('coach', 'I could not reach the coaching service just now. Please try again in a moment.');
+		console.error(error);
+	}
+});
+
+document.querySelector('#coach-clear').addEventListener('click', () => {
+	localStorage.removeItem(coachKey());
+	renderCoachThread();
+	showToast('Conversation cleared.');
+});
+
+function initCoach() { renderCoachQuota(); renderCoachChips(); renderCoachThread(); }
+
 // ---- Accounts: many accounts can live side by side, and the session survives a reload ----
 function loadAccounts() { try { return JSON.parse(localStorage.getItem('forge-accounts') || '{}'); } catch (error) { return {}; } }
 function saveAccounts(accounts) { localStorage.setItem('forge-accounts', JSON.stringify(accounts)); }
 // A tiny non-cryptographic hash so raw passwords never sit in storage. Real apps hash on the server.
 function hashPassword(password) { let hash = 5381; for (let index = 0; index < password.length; index += 1) hash = ((hash << 5) + hash + password.charCodeAt(index)) >>> 0; return `h${hash.toString(36)}`; }
 
+// ---- Derived stats: every number on screen comes from the user's own saved reports ----
+function prsKey() { return `forge-prs-${currentUserKey()}`; }
+function workoutCountKey() { return `forge-workout-count-${currentUserKey()}`; }
+function loadReports() { try { return JSON.parse(localStorage.getItem(`forge-reports-${currentUserKey()}`) || '[]'); } catch (error) { return []; } }
+
+// Consecutive days ending today or yesterday, counted from report dates.
+function calculateStreak(reports) {
+	if (!reports.length) return 0;
+	const days = [...new Set(reports.map((report) => new Date(report.date).toDateString()))]
+		.map((value) => new Date(value).setHours(0, 0, 0, 0))
+		.sort((a, b) => b - a);
+	const today = new Date().setHours(0, 0, 0, 0);
+	const dayMs = 86400000;
+	if (days[0] !== today && days[0] !== today - dayMs) return 0;
+	let streak = 1;
+	for (let index = 1; index < days.length; index += 1) {
+		if (days[index - 1] - days[index] === dayMs) streak += 1; else break;
+	}
+	return streak;
+}
+
+function refreshStats() {
+	const reports = loadReports();
+	const prs = JSON.parse(localStorage.getItem(prsKey()) || '{}');
+	const profile = JSON.parse(localStorage.getItem('forge-profile') || '{}');
+	const target = Number(profile.target) || 4;
+
+	const total = reports.length;
+	const streak = calculateStreak(reports);
+	const pbCount = Object.keys(prs).length;
+
+	const weekAgo = Date.now() - 7 * 86400000;
+	const thisWeek = reports.filter((report) => new Date(report.date).getTime() >= weekAgo).length;
+
+	document.querySelectorAll('#workouts-count, #profile-workouts-count, #profile-page-workouts-count').forEach((element) => { element.textContent = total; });
+	document.querySelectorAll('#profile-streak, #profile-page-streak').forEach((element) => { element.textContent = streak; });
+	document.querySelectorAll('#profile-pbs, #profile-page-pbs').forEach((element) => { element.textContent = pbCount; });
+	const streakNode = document.querySelector('#streak-count');
+	if (streakNode) streakNode.innerHTML = `${streak} <span>${streak === 1 ? 'day' : 'days'}</span>`;
+	const ring = document.querySelector('#week-ring');
+	if (ring) ring.textContent = `${thisWeek}/${target}`;
+	const weekSessions = document.querySelector('#week-sessions');
+	if (weekSessions) weekSessions.textContent = thisWeek;
+
+	const best = Object.entries(prs).sort((a, b) => b[1] - a[1])[0];
+	const liftValue = document.querySelector('#top-lift-weight');
+	const liftName = document.querySelector('#top-lift-name');
+	if (liftValue && liftName) {
+		if (best) { liftValue.innerHTML = `${best[1]} <small>kg</small>`; liftName.textContent = `${best[0]} · personal best`; }
+		else { liftValue.textContent = '—'; liftName.textContent = total ? 'Log weights to track your top lift' : 'No sessions logged yet'; }
+	}
+
+	const since = document.querySelector('#member-since');
+	const sincePage = document.querySelector('#member-since-page');
+	const joined = profile.joined ? new Date(profile.joined).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : null;
+	[since, sincePage].forEach((node) => { if (node) node.textContent = joined ? `Training since ${joined}` : 'New member'; });
+
+	renderNextWorkout();
+}
+
+// The home card mirrors whatever the user has actually built.
+function renderNextWorkout() {
+	const card = document.querySelector('#next-workout-card');
+	const title = document.querySelector('#next-plan-title');
+	if (!card || !title) return;
+	const workouts = loadWorkouts();
+	if (!workouts.length) {
+		title.textContent = 'No workout yet';
+		card.innerHTML = '<div class="workout-card-top"><span>GET STARTED</span></div><h3>Build your first session</h3><p>Pick your exercises, sets and reps, then run it with the timer.</p><button class="primary-button" id="start-workout">Create a workout <span>+</span></button>';
+	} else {
+		const next = workouts[0];
+		const totalSets = next.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
+		title.textContent = next.name;
+		card.innerHTML = `<div class="workout-card-top"><span class="status-dot"></span><span>READY TO TRAIN</span><span class="workout-time">${next.exercises.length} EXERCISES</span></div><h3>${next.name}</h3><p>${totalSets} sets planned</p>${next.exercises.slice(0, 3).map((exercise, index) => `<div class="exercise-preview"><div class="exercise-number">${String(index + 1).padStart(2, '0')}</div><div><b>${exercise.name}</b><span>${exercise.sets} sets x ${exercise.reps} reps</span></div><strong>${categoryIcons[exercise.category] || '🏋️'}</strong></div>`).join('')}<button class="primary-button" id="start-workout">Start workout <span>→</span></button>`;
+	}
+	document.querySelector('#start-workout').addEventListener('click', () => {
+		const list = loadWorkouts();
+		if (list.length) startWorkout(list[0]); else { openTab('workout'); openBuilder(null); }
+	});
+}
+
 // ---- Inbox: incoming friend requests and gym invites, per account ----
 function requestsKey() { return `forge-requests-${currentUserKey()}`; }
-const seedRequests = [
-	{ id: 1, type: 'friend', name: 'Jamie Diaz', detail: 'Trains 5x a week · 82.5 kg bench', when: '24 minutes ago' },
-	{ id: 2, type: 'gym', name: 'Sam Kim', detail: 'Leg day at Iron Works · Saturday 10:00', when: '2 hours ago' },
-	{ id: 3, type: 'friend', name: 'Nadia Petrou', detail: 'Found you by email', when: 'Yesterday' },
-];
 function loadRequests() {
 	try {
-		const stored = localStorage.getItem(requestsKey());
-		if (stored === null) { localStorage.setItem(requestsKey(), JSON.stringify(seedRequests)); return [...seedRequests]; }
-		return JSON.parse(stored);
+		return JSON.parse(localStorage.getItem(requestsKey()) || '[]');
 	} catch (error) { return []; }
 }
 function saveRequests(list) { localStorage.setItem(requestsKey(), JSON.stringify(list)); }
@@ -782,8 +1327,8 @@ function resolveRequest(id, accepted) {
 	saveRequests(list.filter((item) => item.id !== id));
 	if (accepted) {
 		if (request.type === 'friend') {
-			saveFriend(request.name);
-			addFriendRow(request.name, request.detail);
+			saveFriend(request.name, request.detail);
+			showToast(`${request.name} added to your friends.`);
 		} else {
 			showToast(`Gym session with ${request.name} confirmed.`);
 		}
@@ -792,14 +1337,9 @@ function resolveRequest(id, accepted) {
 	}
 	renderRequests();
 }
-function addFriendRow(name, detail) {
-	const row = document.createElement('div');
-	row.className = 'friend-row';
-	row.innerHTML = `<span class="friend-avatar">${initials(name)}</span><span><b>${name}</b><small>${detail}</small></span><button class="invite-button" data-friend="${name}">Invite</button>`;
-	row.querySelector('.invite-button').addEventListener('click', () => { document.querySelector('#invite-name').value = name; showModal('invite-modal'); });
-	document.querySelector('#friend-list').append(row);
-}
 renderRequests();
+renderFriends();
+initCoach();
 
 const authForm = document.querySelector('#auth-form');
 function setAuthMode(signUp) { isSignUp = signUp; document.querySelectorAll('.signup-only').forEach((element) => { element.classList.toggle('visible', isSignUp); element.querySelectorAll('input, select').forEach((field) => { field.required = isSignUp; }); }); document.querySelector('#auth-submit').innerHTML = isSignUp ? 'Create account <span>-></span>' : 'Sign in <span>-></span>'; document.querySelector('#auth-switch').textContent = isSignUp ? 'Already have an account? Sign in' : 'New here? Create an account'; document.querySelector('#auth-message').textContent = ''; }
@@ -817,6 +1357,12 @@ function enterApp(email, profile) {
 	renderNutritionLock();
 	renderRequests();
 	initCalendar();
+	renderGoals();
+	renderFriends();
+	refreshStats();
+	applyAvatar();
+	renderBadges();
+	initCoach();
 }
 
 function signOut() {
@@ -828,6 +1374,10 @@ function signOut() {
 
 authForm.addEventListener('submit', (event) => {
 	event.preventDefault();
+	try { handleAuthSubmit(); } catch (error) { document.querySelector('#auth-message').textContent = `Something went wrong: ${error.message}`; console.error(error); }
+});
+
+function handleAuthSubmit() {
 	const email = document.querySelector('#auth-email').value.trim().toLowerCase();
 	const password = document.querySelector('#auth-password').value;
 	const message = document.querySelector('#auth-message');
@@ -855,7 +1405,7 @@ authForm.addEventListener('submit', (event) => {
 	if (!account || account.password !== hashPassword(password)) { message.textContent = 'No matching account. Check your details or create one.'; return; }
 	enterApp(email, account.profile);
 	showToast(`Welcome back, ${account.profile.name.split(' ')[0]}.`);
-});
+}
 
 document.querySelector('#sign-out').addEventListener('click', signOut);
 
