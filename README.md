@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.svg" alt="Forge logo" width="96" height="96">
+</p>
+
 # Forge — Gym Tracker
 
 A mobile-first workout tracker built as an installable Progressive Web App. Build a workout from scratch, run it set by set with a live timer, and get a detailed breakdown when you finish.
@@ -31,6 +35,18 @@ Search for other members, send friend requests and gym invites. An inbox surface
 
 ### Goals and progress
 Set measurable goals with target dates and watch progress bars fill. Track weekly volume, personal records, and upload progress photos for visual check-ins.
+
+### AI Coach
+Ask a chat-style assistant about sets, reps, rest, protein, calories, recovery, technique or plateaus — it stays scoped to training and nutrition. Free accounts get a handful of questions a day with a short answer; Premium gets unlimited questions with fuller, more detailed replies. Quick-tap suggested questions are available, and the whole thread is saved per account. Works out of the box with a built-in local answer engine; point it at a real model instead by running the included example backend (`coach-server-example.js`) and setting `window.FORGE_COACH_ENDPOINT`.
+
+### Achievements
+Fifteen badges — bronze through elite — unlock from real activity: your first workout, a seven-day streak, 100 sessions logged, an early-morning or late-night session, five templates built, three friends added, and more. Badges are visible on your profile.
+
+### Custom avatars
+A Premium perk: pick from a set of inline SVG avatar icons and recolour them from an eight-colour palette. Falls back to your initials if you don't set one.
+
+### Training reminders
+Turn on weekly workout reminders (with a browser notification permission prompt) and schedule a specific day and time for the app to nudge you.
 
 ### Forge Premium
 A subscription tier presented across five tabs — Overview, Benefits, Pricing, Nutrition and Extras:
@@ -74,12 +90,13 @@ Open the served URL in Chrome or Safari on your phone and choose **Add to Home S
 ## Project structure
 
 ```
-index.html      Markup for every screen and modal
-styles.css      All styling
-app.js          All application logic
-manifest.json   PWA manifest
-logo.svg        App icon
-preview.html    Generated single-file build for quick testing
+index.html                  Markup for every screen and modal
+styles.css                  All styling
+app.js                      All application logic
+manifest.json               PWA manifest
+logo.svg                    App icon
+preview.html                Generated single-file build for quick testing
+coach-server-example.js     Example Node/Express backend for the AI Coach (keeps the model API key server-side)
 ```
 
 ### Rebuilding the preview
@@ -114,10 +131,25 @@ Everything lives in `localStorage`. Keys ending in a user identifier are scoped 
 | `forge-reports-{user}` | Completed session reports |
 | `forge-calendar-{user}` | Training and rest days with times |
 | `forge-requests-{user}` | Pending friend requests and gym invites |
+| `forge-friends-{user}` | Accepted friend connections |
+| `forge-goals-{user}` | Saved goals and progress |
+| `forge-prs-{user}` | Personal records per exercise |
+| `forge-badges-{user}` | Earned achievement badges |
+| `forge-avatar-{user}` | Chosen custom avatar (art + colour) |
+| `forge-workout-count-{user}` | Saved-template counter shown in the UI |
+| `forge-coach-{user}` | AI Coach conversation history |
+| `forge-coach-usage-{user}` | AI Coach daily question count (free tier) |
 | `forge-premium` | Subscription state |
+| `forge-subscription` | Subscription details (plan, start date, card's last 4 digits) |
+| `forge-billing` | Selected billing plan (monthly/yearly) at checkout |
 | `forge-nutrition-goal` | Selected nutrition goal |
 | `forge-theme` | Chosen colour theme |
 | `forge-language` | Interface language |
+| `forge-reminders` | Whether weekly workout reminders are enabled |
+| `forge-reminder-settings` | Chosen reminder day and time |
+| `forge-tracking` | Today's Extras tracking (meals, water, calories, steps) |
+| `forge-sets` | Logged sets used for the monthly Extras report |
+| `forge-last-invite` | Most recent gym invite sent |
 
 Clearing browser data wipes everything. There is no server, so nothing syncs between devices.
 
