@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="logo.svg" alt="Forge logo" width="96" height="96">
-</p>
-
 # Forge — Gym Tracker
 
 A mobile-first workout tracker built as an installable Progressive Web App. Build a workout from scratch, run it set by set with a live timer, and get a detailed breakdown when you finish.
@@ -36,18 +32,6 @@ Search for other members, send friend requests and gym invites. An inbox surface
 ### Goals and progress
 Set measurable goals with target dates and watch progress bars fill. Track weekly volume, personal records, and upload progress photos for visual check-ins.
 
-### AI Coach
-Ask a chat-style assistant about sets, reps, rest, protein, calories, recovery, technique or plateaus — it stays scoped to training and nutrition. Free accounts get a handful of questions a day with a short answer; Premium gets unlimited questions with fuller, more detailed replies. Quick-tap suggested questions are available, and the whole thread is saved per account. Works out of the box with a built-in local answer engine; point it at a real model instead by running the included example backend (`coach-server-example.js`) and setting `window.FORGE_COACH_ENDPOINT`.
-
-### Achievements
-Fifteen badges — bronze through elite — unlock from real activity: your first workout, a seven-day streak, 100 sessions logged, an early-morning or late-night session, five templates built, three friends added, and more. Badges are visible on your profile.
-
-### Custom avatars
-A Premium perk: pick from a set of inline SVG avatar icons and recolour them from an eight-colour palette. Falls back to your initials if you don't set one.
-
-### Training reminders
-Turn on weekly workout reminders (with a browser notification permission prompt) and schedule a specific day and time for the app to nudge you.
-
 ### Forge Premium
 A subscription tier presented across five tabs — Overview, Benefits, Pricing, Nutrition and Extras:
 
@@ -55,7 +39,9 @@ A subscription tier presented across five tabs — Overview, Benefits, Pricing, 
 - **Extras**: daily tracking for meals, water, calories and steps; nine colour themes including neon variants; monthly summary reports.
 
 ### Accounts
-Multiple accounts coexist in the same browser. Passwords are hashed rather than stored in plain text. The session survives a page reload, so you stay signed in. Every account keeps its own workouts, reports, calendar and inbox.
+Real accounts live on the included backend (`server/`): passwords are hashed with bcrypt, sessions are a signed, httpOnly cookie good for 30 days, and signing up sends a verification email from `pixelforgenetworks@gmail.com`. Because the account lives on the server rather than in one browser's `localStorage`, signing in from a different browser or device reaches the same account — no need to create it again. Every account keeps its own workouts, reports, calendar and inbox.
+
+If the server isn't running (for example, `preview.html` opened on its own), the app falls back to a localStorage-only account store scoped to that browser, so the auth screen still works without a backend — just without cross-device sync or email verification.
 
 ### Other
 Seven interface languages (English, Spanish, French, German, Portuguese, Greek, Arabic) with full right-to-left support for Arabic. Installable to a phone home screen as a PWA.
@@ -64,12 +50,35 @@ Seven interface languages (English, Spanish, French, German, Portuguese, Greek, 
 
 ## Getting started
 
-Clone and open. That's the whole setup.
+Clone and open. That's the whole setup for the frontend; accounts need the backend below.
 
 ```bash
 git clone https://github.com/YOUR-USERNAME/forge-gym-tracker.git
 cd forge-gym-tracker
 ```
+
+### Option A: with the backend (real accounts, verification emails)
+
+```bash
+cd server
+npm install
+copy .env.example .env   # macOS/Linux: cp .env.example .env
+```
+
+Open `server/.env` and fill in:
+
+- `JWT_SECRET` — any long random string (or generate one: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`)
+- `GMAIL_APP_PASSWORD` — an [App Password](https://myaccount.google.com/apppasswords) for the `pixelforgenetworks@gmail.com` Gmail account (requires 2-Step Verification on that account). Without this, the server still works — it just prints the verification link to its console instead of emailing it.
+
+Then:
+
+```bash
+npm start
+```
+
+Visit `http://localhost:8788` — the server hosts the frontend and the `/api/auth/...` endpoints from one process.
+
+### Option B: frontend only (no accounts backend)
 
 Because the app registers a web manifest, serve it over HTTP rather than opening the file directly:
 
@@ -77,9 +86,9 @@ Because the app registers a web manifest, serve it over HTTP rather than opening
 python3 -m http.server 8000
 ```
 
-Then visit `http://localhost:8000`.
+Then visit `http://localhost:8000`. Signing in falls back to browser-local accounts (see [Accounts](#accounts)).
 
-To try it without a server, open `preview.html` — a single self-contained file with the CSS and JavaScript inlined.
+To try it without any server, open `preview.html` — a single self-contained file with the CSS and JavaScript inlined. Auth falls back to local-only accounts here too.
 
 ### Install on a phone
 
@@ -90,13 +99,19 @@ Open the served URL in Chrome or Safari on your phone and choose **Add to Home S
 ## Project structure
 
 ```
-index.html                  Markup for every screen and modal
-styles.css                  All styling
-app.js                      All application logic
-manifest.json               PWA manifest
-logo.svg                    App icon
-preview.html                Generated single-file build for quick testing
-coach-server-example.js     Example Node/Express backend for the AI Coach (keeps the model API key server-side)
+index.html                Markup for every screen and modal
+styles.css                All styling
+app.js                    All application logic
+manifest.json             PWA manifest
+logo.svg                  App icon
+preview.html              Generated single-file build for quick testing
+coach-server-example.js   Example backend for the AI Coach feature (separate from accounts)
+server/                   Accounts backend: signup, login, sessions, verification email
+  index.js                  Express app + all /api/auth/... routes
+  db.js                      JSON-file user store (server/data/users.json, gitignored)
+  mailer.js                  Sends the verification email via Gmail SMTP
+  package.json
+  .env.example               Copy to .env and fill in (gitignored)
 ```
 
 ### Rebuilding the preview
@@ -120,38 +135,23 @@ open("preview.html", "w", encoding="utf-8").write(html)
 
 ## Data storage
 
-Everything lives in `localStorage`. Keys ending in a user identifier are scoped per account.
+Accounts (email, hashed password, profile, verification status) live in `server/data/users.json`, managed by the backend — not in the browser. Everything else — workouts, reports, calendar, goals, social — still lives in the browser's `localStorage`, scoped per account by email. (`forge-accounts` below is only used by the no-backend fallback described in [Accounts](#accounts).)
 
 | Key | Contents |
 | --- | --- |
-| `forge-accounts` | All registered accounts with hashed passwords |
+| `forge-accounts` | Fallback-only account store, used when no backend is running |
 | `forge-session` | Email of the signed-in user |
 | `forge-profile` | Active user's profile |
 | `forge-workouts-{user}` | Saved workout templates |
 | `forge-reports-{user}` | Completed session reports |
 | `forge-calendar-{user}` | Training and rest days with times |
 | `forge-requests-{user}` | Pending friend requests and gym invites |
-| `forge-friends-{user}` | Accepted friend connections |
-| `forge-goals-{user}` | Saved goals and progress |
-| `forge-prs-{user}` | Personal records per exercise |
-| `forge-badges-{user}` | Earned achievement badges |
-| `forge-avatar-{user}` | Chosen custom avatar (art + colour) |
-| `forge-workout-count-{user}` | Saved-template counter shown in the UI |
-| `forge-coach-{user}` | AI Coach conversation history |
-| `forge-coach-usage-{user}` | AI Coach daily question count (free tier) |
 | `forge-premium` | Subscription state |
-| `forge-subscription` | Subscription details (plan, start date, card's last 4 digits) |
-| `forge-billing` | Selected billing plan (monthly/yearly) at checkout |
 | `forge-nutrition-goal` | Selected nutrition goal |
 | `forge-theme` | Chosen colour theme |
 | `forge-language` | Interface language |
-| `forge-reminders` | Whether weekly workout reminders are enabled |
-| `forge-reminder-settings` | Chosen reminder day and time |
-| `forge-tracking` | Today's Extras tracking (meals, water, calories, steps) |
-| `forge-sets` | Logged sets used for the monthly Extras report |
-| `forge-last-invite` | Most recent gym invite sent |
 
-Clearing browser data wipes everything. There is no server, so nothing syncs between devices.
+Clearing browser data wipes the local data (workouts, reports, calendar, goals). The account itself is unaffected since it lives on the server.
 
 ---
 
@@ -179,7 +179,8 @@ Flow in one line: *user taps Subscribe → server creates a Stripe Checkout sess
 
 ## Roadmap
 
-- Backend with real authentication and cross-device sync
+- ~~Backend with real authentication and cross-device sync~~ — done, see `server/`
+- Sync workouts, reports, calendar and goals to the backend too (currently accounts only)
 - Weight and volume logging per set inside the runner
 - Multi-month calendar navigation
 - Real friend connections instead of local placeholders
@@ -196,7 +197,7 @@ Any modern browser: Chrome, Edge, Safari, Firefox, and their mobile versions. Us
 
 ## Contributing
 
-Issues and pull requests are welcome. Keep the zero-dependency approach — no frameworks, no build step.
+Issues and pull requests are welcome. Keep the frontend's zero-dependency approach — no frameworks, no build step. `server/` is the exception: it's a small Node/Express app and is expected to have npm dependencies.
 
 ---
 

@@ -176,6 +176,9 @@ const contents = document.querySelectorAll('.tab-content');
 const toast = document.querySelector('#toast');
 const authScreen = document.querySelector('#auth-screen');
 let isSignUp = false;
+// 'server' once a real backend session is confirmed (see restoreSession/handleAuthSubmit below),
+// 'local' while running against the localStorage-only fallback accounts.
+let authMode = 'local';
 
 function openTab(name) { if (name === 'menu') return; contents.forEach((content) => content.classList.toggle('active', content.id === `${name}-tab`)); navItems.forEach((item) => item.classList.toggle('active', item.dataset.tab === name)); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function showToast(message) { toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2200); }
@@ -656,7 +659,7 @@ document.querySelector('#goal-form').addEventListener('submit', (event) => {
 renderGoals();
 
 document.querySelector('#edit-profile').addEventListener('click', () => { document.querySelector('#edit-name').value = document.querySelector('#profile-name').textContent; document.querySelector('#edit-height').value = parseInt(document.querySelector('#profile-height').textContent, 10); document.querySelector('#edit-weight').value = parseInt(document.querySelector('#profile-weight').textContent, 10); document.querySelector('#edit-focus').value = document.querySelector('#profile-focus').textContent; document.querySelector('#edit-gender').value = ['Male','Female','Other'].includes(document.querySelector('#profile-gender').textContent) ? document.querySelector('#profile-gender').textContent : 'Other'; document.querySelector('#edit-target').value = parseInt(document.querySelector('#profile-page-target').textContent, 10) || 4; showModal('profile-modal'); });
-document.querySelector('#profile-form').addEventListener('submit', (event) => { event.preventDefault(); const values = { name: document.querySelector('#edit-name').value, height: document.querySelector('#edit-height').value, weight: document.querySelector('#edit-weight').value, focus: document.querySelector('#edit-focus').value, gender: document.querySelector('#edit-gender').value, target: document.querySelector('#edit-target').value }; localStorage.setItem('forge-profile', JSON.stringify(values)); const sessionEmail = localStorage.getItem('forge-session'); if (sessionEmail) { const accounts = loadAccounts(); if (accounts[sessionEmail]) { accounts[sessionEmail].profile = { ...accounts[sessionEmail].profile, ...values }; saveAccounts(accounts); } } updateProfile(values); closeModal(); showToast('Profile updated.'); });
+document.querySelector('#profile-form').addEventListener('submit', (event) => { event.preventDefault(); const values = { name: document.querySelector('#edit-name').value, height: document.querySelector('#edit-height').value, weight: document.querySelector('#edit-weight').value, focus: document.querySelector('#edit-focus').value, gender: document.querySelector('#edit-gender').value, target: document.querySelector('#edit-target').value }; localStorage.setItem('forge-profile', JSON.stringify(values)); const sessionEmail = localStorage.getItem('forge-session'); if (sessionEmail) { if (authMode === 'server') { fetch('/api/auth/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(values) }).catch((error) => console.error('Could not sync profile to the server:', error)); } else { const accounts = loadAccounts(); if (accounts[sessionEmail]) { accounts[sessionEmail].profile = { ...accounts[sessionEmail].profile, ...values }; saveAccounts(accounts); } } } updateProfile(values); closeModal(); showToast('Profile updated.'); });
 function updateProfile(values) { values.target = values.target || 4; const initials = values.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(); document.querySelectorAll('#profile-name, #profile-page-name').forEach((element) => { element.textContent = values.name; }); document.querySelectorAll('#profile-height, #profile-page-height').forEach((element) => { element.textContent = `${values.height} cm`; }); document.querySelectorAll('#profile-weight, #profile-page-weight').forEach((element) => { element.textContent = `${values.weight} kg`; }); document.querySelectorAll('#profile-focus, #profile-page-focus').forEach((element) => { element.textContent = values.focus; }); document.querySelectorAll('#profile-gender, #profile-page-gender').forEach((element) => { element.textContent = values.gender || '—'; }); if (typeof applyAvatar === 'function') applyAvatar(); document.querySelector('#profile-page-target').textContent = `${values.target} sessions`; document.querySelector('h1').innerHTML = `Good morning, ${values.name.split(' ')[0]}<span class="accent">.</span>`; document.querySelectorAll('.avatar, .large-avatar').forEach((element) => { element.textContent = initials; }); }
 const savedProfile = JSON.parse(localStorage.getItem('forge-profile') || 'null'); if (savedProfile) updateProfile(savedProfile);
 
@@ -948,115 +951,161 @@ renderRecipes();
 const COACH_ENDPOINT = window.FORGE_COACH_ENDPOINT || null;
 const FREE_DAILY_LIMIT = 3;
 
+// Each topic carries the keywords that should trigger it, a short free answer, and the
+// deeper answer premium subscribers get. `calc` lets an answer use the user's own numbers.
 const coachTopics = [
-	{
-		id: 'sets',
-		match: ['how many sets', 'set count', 'sets per', 'volume', 'πόσα σετ', 'σετ'],
-		title: 'Sets and weekly volume',
-		answer: 'For muscle growth, aim for roughly 10 to 20 hard sets per muscle group per week. Below about 10 you tend to maintain rather than grow; much above 20 the extra sets add fatigue faster than they add muscle. Spread that across two sessions per week rather than one, since training a muscle twice weekly beats hitting it once.',
-		premium: 'Start at the low end and add one or two sets per muscle group every couple of weeks only while your performance keeps improving. When your reps at a given weight stall for two sessions in a row and you feel run down, that is your ceiling for now. Drop back by about a third for a week, then build again. Track this per muscle group, not for your whole programme, because your shoulders and your legs recover at different rates.',
-	},
-	{
-		id: 'reps',
-		match: ['how many reps', 'rep range', 'reps for', 'επαναλήψεις'],
-		title: 'Rep ranges',
-		answer: 'Muscle grows across a wide rep range, roughly 5 to 30, as long as you take sets close to failure. Use 5 to 8 reps for strength on the big lifts, 8 to 15 for most hypertrophy work, and 15 to 25 on isolation and machine exercises where heavy loads are awkward.',
-		premium: 'Match the range to the exercise rather than applying one rule everywhere. Compound lifts like squats and deadlifts respond well to lower reps because form breaks down when you are deep into a set. Isolation work such as lateral raises or curls is safer and more effective at higher reps, where the muscle fatigues before your joints complain. A practical split is heavy compounds first, then moderate accessories, then high-rep finishers.',
-	},
-	{
-		id: 'rest',
-		match: ['rest between', 'how long rest', 'rest time', 'ξεκούραση', 'ανάπαυση'],
-		title: 'Rest between sets',
-		answer: 'Rest 2 to 3 minutes on heavy compound lifts, 1 to 2 minutes on accessory work, and 45 to 90 seconds on isolation exercises. Cutting rest short lowers the weight you can handle on the next set, which costs you more than the time you save.',
-		premium: 'The honest signal is your breathing and your performance, not the clock. If you cannot get within one or two reps of your previous set, you rested too little. On a heavy squat or deadlift day, three full minutes is not laziness, it is what lets you accumulate quality volume. Where you can save time is by pairing unrelated exercises, for example a set of rows while resting from a leg exercise, since they do not compete for the same recovery.',
-	},
-	{
-		id: 'protein',
-		match: ['protein', 'πρωτεΐνη', 'πρωτεινη'],
-		title: 'Protein intake',
-		answer: 'Aim for 1.6 to 2.2 grams of protein per kilogram of bodyweight per day. For an 80 kg person that is roughly 130 to 175 grams. Spread it across three to five meals rather than loading it all into dinner.',
-		premium: 'When you are in a calorie deficit, push toward the upper end, around 2.2 to 2.4 grams per kilogram, because protein protects muscle when energy is scarce and it keeps you fuller than carbohydrate or fat. Aim for 25 to 40 grams per meal, which is enough to fully stimulate muscle repair. Total daily intake matters far more than timing, so hitting your number matters more than eating immediately after training.',
-	},
-	{
-		id: 'calories',
-		match: ['calorie', 'deficit', 'surplus', 'bulk', 'cut', 'θερμίδ', 'χάσω κιλά', 'αδυνατ'],
-		title: 'Calories for your goal',
-		answer: 'To lose fat, eat about 300 to 500 kcal below maintenance, which gives roughly half a kilo of loss per week. To build muscle, eat 200 to 400 kcal above maintenance. Larger deficits mostly cost you muscle and training quality; larger surpluses mostly add fat.',
-		premium: 'Estimate maintenance at roughly 30 to 33 kcal per kilogram of bodyweight if you train several times a week, then adjust based on what the scale actually does over two to three weeks. Do not react to daily fluctuations, since water and food weight swing a kilo or more. If your weekly average has not moved after three weeks, change intake by about 200 kcal. Keep protein fixed and adjust carbohydrate and fat around it.',
-	},
-	{
-		id: 'soreness',
-		match: ['sore', 'doms', 'πιάστηκα', 'πόνος μυ', 'μυϊκός πόνος'],
-		title: 'Muscle soreness',
-		answer: 'Soreness peaks 24 to 48 hours after training and is normal, especially after new exercises. It is not a measure of how good the session was. Light movement, sleep, adequate protein and staying hydrated help more than stretching or ice.',
-		premium: 'You can train a sore muscle if the soreness is mild and fades once you warm up. Skip or lighten the session if the soreness is sharp, one-sided, sits near a joint, or has not eased after four days, as that pattern points to injury rather than ordinary muscle damage. Soreness also falls sharply after the first few weeks of a new programme, which is adaptation, not a sign you have stopped progressing.',
-	},
-	{
-		id: 'frequency',
-		match: ['how often', 'times a week', 'frequency', 'πόσες φορές', 'συχνότητα'],
-		title: 'Training frequency',
-		answer: 'Three to five sessions a week suits almost everyone. Beginners do well on three full-body days; more experienced lifters usually split into four or five sessions. What matters most is the schedule you can repeat for months, not the theoretically optimal one.',
-		premium: 'Choose frequency by the time you realistically have, then fit the split to it. Three days works best as full body. Four days suits an upper and lower split repeated twice. Five days allows push, pull, legs plus two extra sessions. Training each muscle twice weekly beats once, so avoid classic one-muscle-per-day splits unless you are training six days. Build the week around your two hardest sessions and place them where you are most rested.',
-	},
-	{
-		id: 'warmup',
-		match: ['warm up', 'warmup', 'stretch', 'ζέσταμα', 'διατάσεις'],
-		title: 'Warming up',
-		answer: 'Spend 5 to 10 minutes raising your heart rate, then do two or three progressively heavier warm-up sets of your first exercise. Save long static stretching for after training, since holding stretches before heavy lifting can temporarily reduce strength.',
-		premium: 'A practical structure is five minutes of easy cardio, then dynamic movement for the joints you are about to load, then ramp sets. For a working weight of 100 kg you might do the empty bar, then 40, 60 and 80 kg for a few reps each. The goal is to prepare the movement pattern without accumulating fatigue, so warm-up sets should feel easy and stop well short of failure.',
-	},
-	{
-		id: 'form',
-		match: ['form', 'technique', 'proper', 'τεχνική', 'σωστή εκτέλεση'],
-		title: 'Technique',
-		answer: 'Control the weight through the full range you can manage without pain, keep the movement consistent between reps, and only add load once the pattern is stable. If your form changes noticeably on the last reps, the weight is too heavy for that set.',
-		premium: 'Film a set from the side occasionally. It reveals things you cannot feel, such as a hip rising early in a squat or elbows drifting on a press. Choose your ranges based on your own anatomy rather than copying someone else, since limb lengths change what a good position looks like. Pain that is sharp, joint-centred or one-sided is a signal to stop; general muscular burning is not.',
-	},
-	{
-		id: 'sleep',
-		match: ['sleep', 'recovery', 'rest day', 'ύπνος', 'ξεκούραση μέρα'],
-		title: 'Sleep and recovery',
-		answer: 'Sleep is the single biggest recovery factor. Seven to nine hours is the target, and consistently getting under six reduces strength, appetite control and motivation. One or two full rest days per week is normal and productive.',
-		premium: 'If sleep is genuinely limited, lower your training volume rather than pushing through, because sets you cannot recover from produce fatigue instead of progress. Warning signs of under-recovery are a resting heart rate that stays elevated, weights that feel heavier than usual for several sessions, and a flat mood. On light days, easy walking or mobility work aids recovery more than complete inactivity.',
-	},
-	{
-		id: 'plateau',
-		match: ['plateau', 'stuck', 'not progressing', 'stall', 'κόλλησα', 'στασιμότητα'],
-		title: 'Breaking a plateau',
-		answer: 'Real plateaus are usually recovery problems, not programme problems. Before changing exercises, check your sleep, calories and protein, and whether you are actually adding weight or reps over time. If those are solid, take a lighter week and then rebuild.',
-		premium: 'Work through it in order. First confirm you are tracking, because most stalls are invisible without records. Second, take a deload week at about two thirds of your usual volume. Third, change the stimulus rather than everything at once: adjust the rep range, swap a barbell variation for a dumbbell one, or add a set. Give any change four to six weeks before judging it, since shorter cycles never show whether it worked.',
-	},
-	{
-		id: 'cardio',
-		match: ['cardio', 'running', 'run', 'steps', 'τρέξιμο', 'καρδιο'],
-		title: 'Cardio alongside lifting',
-		answer: 'Cardio does not ruin muscle growth at reasonable volumes. Two or three sessions of 20 to 30 minutes fits comfortably with lifting and improves recovery between sets. Keep hard cardio and heavy leg training on separate days where possible.',
-		premium: 'The interference effect matters mostly at high volumes of intense endurance work, particularly running, which shares fatigue with leg training. Cycling and rowing interfere less because the impact is lower. If you do both on one day, lift first when strength is the priority. Daily walking is the most underrated tool here: it adds energy expenditure and aids recovery without competing for recovery capacity.',
-	},
-	{
-		id: 'supplements',
-		match: ['supplement', 'creatine', 'whey', 'συμπλήρωμα', 'κρεατίνη'],
-		title: 'Supplements',
-		answer: 'Only a few have solid evidence behind them. Creatine monohydrate at 3 to 5 grams daily is the best supported for strength and muscle. Whey protein is convenient but is food, not magic. Caffeine helps performance. Almost everything else is optional.',
-		premium: 'Creatine needs no loading phase; take the same small dose daily at any time and it saturates within about a month. The initial weight gain of a kilo or so is water inside the muscle, not fat. Vitamin D is worth checking if you get little sun, which is common in winter. Treat protein powder as a tool for hitting your daily target when whole food is inconvenient, not as a requirement. Be sceptical of anything promising results that whole food and training cannot deliver.',
-	},
-	{
-		id: 'beginner',
-		match: ['beginner', 'start', 'new to', 'first time', 'αρχάριος', 'ξεκινάω'],
-		title: 'Starting out',
-		answer: 'Begin with three full-body sessions a week built around a few compound movements: a squat, a hinge, a push, a pull and a carry or core exercise. Two or three sets each is plenty. Focus on learning the movements and turning up consistently for the first two months.',
-		premium: 'Your first months are the highest-return period you will ever have, so do not waste them chasing complexity. Add a small amount of weight whenever you complete all your reps with good form, which will happen almost every session at first. Do not train to failure yet, since the technical cost outweighs the benefit while you are still learning patterns. Record your weights from day one, because a training log is the single habit that separates people who progress from people who repeat the same year.',
-	},
-	{
-		id: 'water',
-		match: ['water', 'hydrat', 'νερό', 'ενυδάτωση'],
-		title: 'Hydration',
-		answer: 'Aim for roughly 30 to 35 ml of water per kilogram of bodyweight daily, plus extra around training. Even mild dehydration reduces strength and endurance noticeably. Pale straw-coloured urine is a good practical indicator.',
-		premium: 'During longer or hotter sessions, drink around 500 to 700 ml per hour of training rather than trying to catch up afterwards. If you sweat heavily or train over an hour, adding a pinch of salt or an electrolyte tablet helps you retain what you drink. Overdrinking plain water in large volumes is not harmless, so use thirst and urine colour as your guide rather than forcing a fixed number.',
-	},
+	{ id: 'sets', keys: ['sets', 'set', 'volume', 'σετ', 'όγκος'], title: 'Sets and volume',
+		free: 'Aim for 10 to 20 hard sets per muscle group per week. Below 10 you mostly maintain; above 20 the extra sets add fatigue faster than muscle. Split them across two sessions per week rather than one.',
+		premium: 'Start at the low end and add one or two sets per muscle group every fortnight, but only while performance keeps improving. When your reps at a given weight stall for two sessions running and you feel flat, that is your ceiling for now. Drop volume by a third for a week, then build again. Track this per muscle group, since shoulders and legs recover at different rates.' },
+	{ id: 'reps', keys: ['reps', 'rep', 'repetitions', 'range', 'επαναλήψεις'], title: 'Rep ranges',
+		free: 'Muscle grows anywhere from 5 to 30 reps as long as the set is taken close to failure. Use 5 to 8 for strength on big lifts, 8 to 15 for most hypertrophy work, and 15 to 25 on isolation exercises.',
+		premium: 'Match the range to the exercise rather than applying one rule. Compounds like squats and deadlifts suit lower reps because technique degrades deep into a set. Isolation work such as lateral raises or curls is both safer and more effective high, where the muscle fails before the joint complains. Heavy compounds first, moderate accessories second, high-rep finishers last.' },
+	{ id: 'rest', keys: ['rest', 'break', 'between sets', 'ξεκούραση', 'διάλειμμα', 'παύση'], title: 'Rest between sets',
+		free: 'Rest 2 to 3 minutes on heavy compounds, 1 to 2 minutes on accessories, and 45 to 90 seconds on isolation work. Cutting rest short lowers the weight you handle next set, which costs more than the time saved.',
+		premium: 'The real signal is performance, not the clock. If you cannot get within one or two reps of your previous set, you rested too little. Three full minutes on a heavy squat day is not laziness, it is what lets you accumulate quality volume. To save time, pair unrelated exercises: a set of rows while resting from legs, since they do not compete for recovery.' },
+	{ id: 'protein', keys: ['protein', 'πρωτεΐνη', 'πρωτεινη'], title: 'Protein',
+		free: 'Aim for 1.6 to 2.2 grams of protein per kilogram of bodyweight daily, spread across three to five meals.',
+		premium: 'In a calorie deficit push toward 2.2 to 2.4 g/kg, since protein protects muscle when energy is scarce and keeps you fuller than carbs or fat. Target 25 to 40 g per meal, enough to fully stimulate repair. Daily total matters far more than timing, so hitting your number beats eating immediately after training.',
+		calc: (p) => p.weight ? `\n\nAt your logged weight of ${p.weight} kg, that is roughly ${Math.round(p.weight * 1.6)} to ${Math.round(p.weight * 2.2)} grams per day.` : '' },
+	{ id: 'calories', keys: ['calories', 'calorie', 'kcal', 'deficit', 'surplus', 'maintenance', 'θερμίδες', 'θερμιδ'], title: 'Calories',
+		free: 'To lose fat eat 300 to 500 kcal below maintenance, which gives about half a kilo per week. To build muscle eat 200 to 400 kcal above. Bigger deficits cost muscle; bigger surpluses mostly add fat.',
+		premium: 'Estimate maintenance at 30 to 33 kcal per kilogram if you train several times a week, then adjust based on what the scale actually does over two to three weeks. Ignore daily swings, which are water and food weight. If the weekly average has not moved in three weeks, change intake by about 200 kcal. Keep protein fixed and adjust carbs and fat around it.',
+		calc: (p) => p.weight ? `\n\nFor you at ${p.weight} kg, maintenance is roughly ${Math.round(p.weight * 31)} kcal. Fat loss around ${Math.round(p.weight * 31 - 400)}, muscle gain around ${Math.round(p.weight * 31 + 300)}.` : '' },
+	{ id: 'carbs', keys: ['carbs', 'carbohydrate', 'υδατάνθρακ'], title: 'Carbohydrates',
+		free: 'Carbs are your main training fuel. Aim for 3 to 5 g per kilogram on normal days, 5 to 7 if you train hard or long. Cutting them very low usually costs you performance in the gym.',
+		premium: 'Concentrate them around training, with a meal two to three hours before and carbs plus protein afterwards. Low-carb diets can work for fat loss because they cut calories, not because carbs are inherently fattening. If your last few sets feel unusually weak and you have been dieting a while, carbs are the first thing to raise.',
+		calc: (p) => p.weight ? `\n\nAt ${p.weight} kg that is about ${Math.round(p.weight * 3)} to ${Math.round(p.weight * 5)} grams daily.` : '' },
+	{ id: 'fats', keys: ['fat intake', 'fats', 'dietary fat', 'much fat', 'fat should', 'fat do i', 'λιπαρά'], title: 'Dietary fat',
+		free: 'Keep fat at 0.6 to 1 g per kilogram of bodyweight. Going much below that for long stretches can affect hormones, sleep and mood. Favour olive oil, nuts, eggs and oily fish.',
+		premium: 'Fat is the easiest macro to over-consume because it is calorie dense at 9 kcal per gram, so a splash of oil adds up quickly. When dieting, set protein first, fat second at the lower end of that range, and let carbs fill the remainder, since carbs do more for training performance.' },
+	{ id: 'water', keys: ['water', 'hydration', 'drink', 'νερό', 'ενυδάτωση'], title: 'Hydration',
+		free: 'Aim for 30 to 35 ml per kilogram of bodyweight daily, plus extra around training. Even mild dehydration measurably reduces strength. Pale straw-coloured urine is a good check.',
+		premium: 'During long or hot sessions drink 500 to 700 ml per hour rather than catching up afterwards. If you sweat heavily, a pinch of salt or an electrolyte tablet helps you retain what you drink. Use thirst and urine colour as your guide instead of forcing a fixed number.',
+		calc: (p) => p.weight ? `\n\nAt ${p.weight} kg, roughly ${(p.weight * 0.033).toFixed(1)} litres a day.` : '' },
+	{ id: 'soreness', keys: ['sore', 'soreness', 'doms', 'aching', 'πιάστηκα', 'πιασμένα'], title: 'Soreness',
+		free: 'Soreness peaks 24 to 48 hours after training and is normal, especially with new exercises. It is not a measure of a good session. Light movement, sleep, protein and hydration help more than stretching or ice.',
+		premium: 'You can train a sore muscle if the soreness is mild and eases once you warm up. Skip or lighten it if the pain is sharp, one-sided, near a joint, or still there after four days, since that pattern suggests injury rather than muscle damage. Soreness also drops sharply after the first weeks of a new programme, which is adaptation, not lost progress.' },
+	{ id: 'frequency', keys: ['how often', 'frequency', 'times a week', 'days a week', 'συχνότητα', 'πόσες φορές'], title: 'Frequency',
+		free: 'Three to five sessions a week suits almost everyone. Beginners do well on three full-body days; more experienced lifters usually split across four or five. The schedule you can repeat for months beats the theoretically optimal one.',
+		premium: 'Pick frequency from the time you actually have, then fit the split to it. Three days works best full body. Four suits upper/lower twice. Five allows push, pull, legs plus two more. Training each muscle twice weekly beats once, so avoid one-muscle-per-day splits unless you train six days.' },
+	{ id: 'split', keys: ['split', 'ppl', 'push pull', 'upper lower', 'full body', 'programme', 'program', 'routine', 'πρόγραμμα'], title: 'Choosing a split',
+		free: 'Three days: full body. Four days: upper/lower twice. Five or six days: push, pull, legs. Any of these works. The split matters far less than whether you turn up and add weight over time.',
+		premium: 'Build the week around your two hardest sessions and place them when you are most rested, usually after a rest day. Put the exercise you most want to improve first in the session, while you are fresh. Keep a split for at least eight weeks before judging it, because shorter cycles never show whether the progression worked.' },
+	{ id: 'overload', keys: ['progressive overload', 'progress', 'add weight', 'increase weight', 'πρόοδο', 'αύξηση βάρους'], title: 'Progressive overload',
+		free: 'Progress means doing slightly more over time: more weight, more reps, or better control at the same weight. When you hit the top of your rep range on every set with clean form, add the smallest available increment and work back up.',
+		premium: 'Use double progression. Pick a range, say 8 to 12. Add weight only when you reach 12 on all sets. On upper body add 1 to 2.5 kg, on lower body 2.5 to 5 kg. When the jump is too big, add reps instead, or add a set. Progress will not be linear beyond your first few months, so judge it monthly rather than session to session.' },
+	{ id: 'failure', keys: ['failure', 'to failure', 'rir', 'how hard', 'μέχρι εξάντληση'], title: 'Training to failure',
+		free: 'Stop most sets one to three reps short of failure. That captures nearly all the growth with far less fatigue. Going to true failure occasionally on isolation work is fine; doing it on every set is counterproductive.',
+		premium: 'Judge proximity by rep speed. When the bar slows noticeably you are within two or three reps of failure. Reserve genuine failure for machines and isolation exercises where failing is safe, and keep two or three reps in reserve on squats, deadlifts and any free-weight overhead work. Failure on compounds costs you the next several sets.' },
+	{ id: 'deload', keys: ['deload', 'rest week', 'overtrain', 'burnt out', 'burned out', 'αποφόρτιση'], title: 'Deloads',
+		free: 'Take a lighter week every six to ten weeks, or whenever performance drops for two sessions running. Cut volume by about half and keep the weights moderate. You do not lose muscle in a week.',
+		premium: 'Signs you need one: weights feel heavier than they should for several sessions, resting heart rate stays elevated, sleep worsens, motivation drops off a cliff, and small joints start aching. Keep training during a deload rather than stopping, because the movement itself aids recovery. Most people come back stronger within one session.' },
+	{ id: 'plateau', keys: ['plateau', 'stuck', 'stall', 'not improving', 'no progress', 'κόλλησα', 'στασιμότητα'], title: 'Plateaus',
+		free: 'Most plateaus are recovery problems, not programme problems. Check sleep, calories and protein first, and confirm you are actually tracking your lifts. If those are solid, take a lighter week then rebuild.',
+		premium: 'Work through it in order. Confirm you are tracking, since most stalls are invisible without records. Take a deload at two thirds volume. Then change one variable, not everything: adjust the rep range, swap a barbell variation for dumbbells, or add a set. Give any change four to six weeks before judging it.' },
+	{ id: 'cardio', keys: ['cardio', 'running', 'run', 'jog', 'cycling', 'τρέξιμο', 'καρδιο'], title: 'Cardio and lifting',
+		free: 'Cardio does not ruin muscle growth at sensible volumes. Two or three sessions of 20 to 30 minutes fits comfortably alongside lifting. Keep hard cardio and heavy leg days separate where you can.',
+		premium: 'Interference matters mostly at high volumes of intense endurance work, especially running, which shares fatigue with leg training. Cycling and rowing interfere less. If both fall on one day, lift first when strength is the priority. Daily walking is the most underrated tool: it burns energy and aids recovery without competing for it.' },
+	{ id: 'steps', keys: ['steps', 'walking', 'walk', 'βήματα', 'περπάτημα'], title: 'Walking and steps',
+		free: 'Eight to ten thousand steps a day is a solid target. Walking burns meaningful energy, aids recovery, and unlike hard cardio it does not interfere with lifting at all.',
+		premium: 'Steps are the easiest lever to pull when fat loss stalls, because adding two thousand steps costs you nothing in recovery whereas cutting another two hundred calories costs you fullness and training quality. Track the weekly average rather than daily, since one busy day distorts the picture.' },
+	{ id: 'supplements', keys: ['supplement', 'supplements', 'pills', 'συμπλήρωμα'], title: 'Supplements',
+		free: 'Only a few are worth the money. Creatine monohydrate at 3 to 5 g daily is the best supported. Whey protein is convenient food, not magic. Caffeine helps performance. Nearly everything else is optional.',
+		premium: 'Vitamin D is worth checking if you get little sun. Treat protein powder as a convenience for hitting your daily target, not a requirement. Be sceptical of anything promising results that food and training cannot deliver, and of proprietary blends that hide doses. If a product needs a marketing story to justify itself, it usually has no evidence behind it.' },
+	{ id: 'creatine', keys: ['creatine', 'κρεατίνη'], title: 'Creatine',
+		free: 'Take 3 to 5 grams of creatine monohydrate daily at any time. No loading phase needed; it saturates within about a month. It is one of the most studied supplements there is and it is safe for healthy people.',
+		premium: 'The kilo or so you gain early is water drawn into the muscle, not fat, and it makes muscles look fuller rather than softer. Monohydrate is the only form with strong evidence, and it is also the cheapest, so ignore the expensive variants. Consistency beats timing entirely: a missed day matters far less than stopping for a month.' },
+	{ id: 'beginner', keys: ['beginner', 'starting', 'start', 'new to', 'first time', 'never trained', 'αρχάριος', 'ξεκινάω'], title: 'Starting out',
+		free: 'Do three full-body sessions a week built on a squat, a hinge, a push, a pull and a core exercise. Two or three sets each. Spend the first two months learning the movements and turning up consistently.',
+		premium: 'Your first months give the highest returns you will ever get, so do not waste them on complexity. Add weight whenever you complete all reps with good form, which will be almost every session at first. Avoid training to failure while you are still learning patterns. Log your weights from day one, because a training log is the single habit separating people who progress from people who repeat the same year.' },
+	{ id: 'warmup', keys: ['warm up', 'warmup', 'warming', 'ζέσταμα', 'προθέρμανση'], title: 'Warming up',
+		free: 'Five to ten minutes raising your heart rate, then two or three progressively heavier warm-up sets of your first exercise. Save long static stretches for after training.',
+		premium: 'A workable structure: five minutes easy cardio, dynamic movement for the joints you are about to load, then ramp sets. For a 100 kg working weight, do the bar, then 40, 60 and 80 kg for a few reps. Warm-up sets should feel easy and stop well short of failure, since the goal is preparation, not fatigue.' },
+	{ id: 'stretching', keys: ['stretch', 'stretching', 'flexibility', 'mobility', 'διατάσεις', 'ευλυγισία'], title: 'Stretching and mobility',
+		free: 'Do dynamic movement before training and static stretching after, or on rest days. Static stretching immediately before heavy lifting can temporarily reduce strength. Lifting through a full range of motion already builds a lot of flexibility.',
+		premium: 'Target the restrictions that actually limit your lifts rather than stretching everything. If you cannot reach depth in a squat, work ankle and hip mobility. If pressing overhead pinches, work thoracic extension and shoulder rotation. Two or three focused drills done daily beat a long generic routine done occasionally.' },
+	{ id: 'form', keys: ['form', 'technique', 'proper', 'correct way', 'τεχνική', 'σωστή εκτέλεση'], title: 'Technique',
+		free: 'Control the weight through the range you can manage without pain, keep reps consistent, and add load only once the pattern is stable. If form changes noticeably on the last reps, the weight is too heavy.',
+		premium: 'Film a set from the side occasionally, since it shows things you cannot feel, like a hip rising early in a squat or elbows flaring on a press. Choose your ranges based on your own limb lengths rather than copying someone built differently. Sharp, joint-centred or one-sided pain means stop; general muscular burning does not.' },
+	{ id: 'pain', keys: ['pain', 'injury', 'injured', 'hurts', 'hurt', 'strain', 'πόνος', 'τραυματισμ'], title: 'Pain and injury',
+		free: 'Sharp pain, joint pain, or pain on one side only means stop that exercise and get it looked at. I am not a doctor and cannot diagnose anything. Persistent pain lasting more than a few days deserves a physiotherapist or doctor, not a workaround.',
+		premium: 'While you wait to be seen, you can usually keep training everything that does not provoke the symptom, which preserves both fitness and routine. Avoid the common mistake of resting completely for weeks and then returning at your old weights, since that is how people re-injure themselves. A qualified professional who watches you move is worth far more than any general advice here.' },
+	{ id: 'sleep', keys: ['sleep', 'sleeping', 'tired', 'recovery', 'ύπνος', 'κούραση'], title: 'Sleep and recovery',
+		free: 'Seven to nine hours. Sleep is the single biggest recovery factor, and consistently under six hours reduces strength, appetite control and motivation. One or two full rest days a week is normal and productive.',
+		premium: 'If sleep is genuinely limited, lower training volume rather than pushing through, since sets you cannot recover from create fatigue instead of progress. Watch for an elevated resting heart rate, weights feeling heavier for several sessions, and a flat mood. On light days, easy walking or mobility work aids recovery more than doing nothing.' },
+	{ id: 'fatloss', keys: ['lose weight', 'lose fat', 'fat loss', 'cutting', 'cut', 'leaner', 'χάσω κιλά', 'αδυνατίσω', 'λίπος'], title: 'Losing fat',
+		free: 'Eat in a moderate deficit, keep protein high, keep lifting, and walk more. Half a kilo per week is a sustainable rate. Faster than that and you start losing muscle alongside fat.',
+		premium: 'Keep training weights as heavy as you can while dieting, because the signal to retain muscle comes from load, not from high reps or extra cardio. Expect strength to plateau rather than climb, which is normal and not a failure. Weigh yourself several times a week and judge the weekly average, since daily readings swing a kilo on water alone. Diet breaks at maintenance every eight to twelve weeks make long cuts far more sustainable.' },
+	{ id: 'muscle', keys: ['build muscle', 'gain muscle', 'bulking', 'bulk', 'mass', 'bigger', 'get big', 'όγκο', 'μυϊκή μάζα'], title: 'Building muscle',
+		free: 'Eat slightly above maintenance, get enough protein, train each muscle twice a week, and add weight or reps over time. Realistic gains are half a kilo of muscle a month for beginners, less after the first year.',
+		premium: 'Keep the surplus small. Beyond about 400 kcal above maintenance you gain mostly fat, because muscle can only be built so fast regardless of how much you eat. If your waist grows faster than your lifts, the surplus is too big. Track a lift and a measurement together: rising numbers on both means it is working, rising waist alone means cut the surplus.' },
+	{ id: 'skinny', keys: ['gain weight', 'skinny', 'hardgainer', 'cant gain', 'underweight', 'πάρω κιλά', 'αδύνατος'], title: 'Struggling to gain weight',
+		free: 'Almost always the issue is eating less than you think. Add calorie-dense foods rather than volume: olive oil, nuts, full-fat dairy, dried fruit. Liquid calories are easier than another plate of chicken and rice.',
+		premium: 'Track everything honestly for a week before concluding you have a fast metabolism, since most people underestimate intake by a fifth or more. Add 300 kcal, hold for two weeks, and only increase again if the scale has not moved. Cutting cardio back also helps, though do not remove walking. Appetite adapts within a couple of weeks, so the first stretch is the hardest.' },
+	{ id: 'abs', keys: ['abs', 'core', 'six pack', 'belly', 'stomach', 'κοιλιακ'], title: 'Abs and core',
+		free: 'Abs are built with weighted core work and revealed by lowering body fat. You cannot spot-reduce belly fat. Two or three core sessions a week alongside heavy compounds is plenty.',
+		premium: 'Train abs like any muscle, with load and progression, using cable crunches, hanging leg raises and weighted planks in the 8 to 15 rep range. Endless bodyweight crunches stop producing growth once you can do fifty. Visibility for most men needs roughly 10 to 12 percent body fat, for women 18 to 22 percent, and that is a nutrition outcome rather than a training one.' },
+	{ id: 'chest', keys: ['chest', 'bench', 'pecs', 'στήθος', 'πάγκο'], title: 'Chest training',
+		free: 'Build chest around a horizontal press, an incline press and a fly. Two chest sessions a week, 10 to 16 total sets. Press with a full range and control the lowering rather than bouncing.',
+		premium: 'The incline press is worth prioritising because the upper chest is the region most people lack. Keep shoulder blades pulled back and down on every press, which protects the shoulder and puts the chest in a stronger position. If you feel presses mostly in your shoulders, reduce the incline angle and slightly widen your grip.' },
+	{ id: 'back', keys: ['back', 'lats', 'pull up', 'pullup', 'row', 'πλάτη'], title: 'Back training',
+		free: 'Back needs both vertical pulling, such as pull-ups or pulldowns, and horizontal pulling, such as rows. Ten to twenty sets a week across both. Pull with your elbows rather than your hands.',
+		premium: 'Back is the muscle group most commonly undertrained relative to chest, which contributes to rounded posture and shoulder problems. A useful rule is to match or exceed your pressing sets with pulling sets. Let the shoulder blade move at the top and bottom of each rep rather than holding it locked, since the lats and mid-back need that range to work fully.' },
+	{ id: 'legs', keys: ['legs', 'squat', 'quads', 'hamstring', 'glutes', 'πόδια', 'γλουτ'], title: 'Leg training',
+		free: 'Build legs on a squat pattern, a hinge such as Romanian deadlifts, and single-leg work like lunges or split squats. Ten to twenty sets a week. Depth matters more than load.',
+		premium: 'Hamstrings need both a hip hinge and a knee flexion movement, since Romanian deadlifts and leg curls train different parts of the muscle. Glutes respond best to hip thrusts and deep squats. Single-leg work is worth keeping even when it feels unimpressive, because it evens out side-to-side differences that eventually limit your bilateral lifts.' },
+	{ id: 'arms', keys: ['arms', 'biceps', 'triceps', 'curl', 'μπράτσα', 'δικέφαλ'], title: 'Arm training',
+		free: 'Arms already get work from pressing and pulling, so 6 to 10 direct sets each per week is usually enough. Use 8 to 15 reps and control the lowering. Triceps make up about two thirds of arm size.',
+		premium: 'Train triceps with both an overhead movement and a pushdown, since the long head only fully lengthens with the arm overhead. For biceps include one exercise with arms behind the body, such as incline curls. Arms respond well to higher frequency because they recover quickly, so three shorter sessions often beat one long arm day.' },
+	{ id: 'shoulders', keys: ['shoulders', 'delts', 'overhead press', 'lateral raise', 'ώμο'], title: 'Shoulder training',
+		free: 'Press overhead for the front delts and do plenty of lateral raises for the side delts, which drive shoulder width. Add rear delt work such as face pulls. Twelve to twenty sets a week total.',
+		premium: 'Side delts are the region that most changes how your physique looks and they tolerate high frequency and high reps well, so 15 to 20 reps three times a week works. Front delts already get substantial work from any pressing, so they rarely need much direct work. Rear delts and face pulls are worth keeping for shoulder health, not just appearance.' },
+	{ id: 'home', keys: ['home', 'no equipment', 'bodyweight', 'no gym', 'σπίτι', 'χωρίς εξοπλισμό'], title: 'Training at home',
+		free: 'You can build real muscle at home with push-ups, split squats, rows under a table, hip thrusts and planks. Progress by slowing the tempo, increasing range, or moving to single-limb versions once reps get high.',
+		premium: 'The main limitation at home is lower body, which outgrows bodyweight quickly. A pair of adjustable dumbbells or a few resistance bands solves most of it cheaply. Use the same progression logic as the gym: pick a rep range, add reps until you top it, then make the exercise harder rather than just doing more reps forever.' },
+	{ id: 'timing', keys: ['meal timing', 'before workout', 'after workout', 'pre workout', 'post workout', 'anabolic window', 'eat before', 'eat after', 'before or after', 'when to eat', 'before training', 'after training', 'πριν την προπόνηση', 'μετά την προπόνηση'], title: 'Meal timing',
+		free: 'Eat a meal with carbs and protein one to three hours before training, and another within a few hours after. The so-called anabolic window is far wider than people think. Daily totals matter more than exact timing.',
+		premium: 'If you train early and cannot eat beforehand, something small and easy to digest like a banana works better than nothing. After training, the only case where timing genuinely matters is if you train twice in one day or fasted, where getting protein in soon afterwards helps. Otherwise, hitting your daily protein across several meals is the whole game.' },
+	{ id: 'fasting', keys: ['fasting', 'fasted', 'intermittent', 'skip breakfast', 'νηστεία'], title: 'Fasted training and fasting',
+		free: 'Intermittent fasting works for some people because it makes eating fewer calories easier, not because of anything special about the fasting itself. Training fasted is fine if you feel good doing it, though heavy sessions usually go better fed.',
+		premium: 'The main drawback for lifters is fitting enough protein into a short eating window, since you want three or more feedings of 25 to 40 grams. If a fasting protocol makes you underperform in the gym or leaves you ravenous later, it is the wrong tool for you regardless of its popularity. Adherence is the only thing that separates diets that work from diets that do not.' },
+	{ id: 'alcohol', keys: ['alcohol', 'drinking', 'beer', 'αλκοόλ', 'ποτό'], title: 'Alcohol',
+		free: 'Alcohol impairs sleep quality, recovery and protein synthesis, and adds calories that are easy to forget. Occasional drinking will not undo your training, but regular heavy sessions will slow progress noticeably.',
+		premium: 'The recovery hit is largest in the 24 hours after drinking, so keep your hardest session away from the night before. Sleep is where most of the damage happens: you may fall asleep faster but you get less deep sleep, which is exactly what recovery depends on. If you drink, eating protein and hydrating around it reduces the worst of the effect.' },
+	{ id: 'motivation', keys: ['motivation', 'motivated', 'lazy', 'consistency', 'give up', 'κίνητρο', 'βαριέμαι'], title: 'Motivation and consistency',
+		free: 'Motivation is unreliable, so build the habit instead: same days, same times, low friction. On days you do not feel like it, commit to the warm-up only. Most sessions start badly and end fine.',
+		premium: 'Lower the bar on bad days rather than skipping, because a short session preserves the habit while a missed one starts the erosion. Track something visible, since progress you can see is the most reliable motivator there is. And check whether your programme is actually enjoyable, because people quit workouts they dread far more often than workouts that are hard.' },
+	{ id: 'age', keys: ['older', 'age', 'too old', 'too late', '40s', '50s', 'im 40', 'im 45', 'im 50', 'im 55', 'im 60', 'at 40', 'at 50', 'at 60', 'ηλικία', 'μεγάλος'], title: 'Training as you get older',
+		free: 'You can build muscle and strength at any age. Recovery is slower, so you may need an extra rest day and a longer warm-up, but the principles do not change. Resistance training becomes more important with age, not less.',
+		premium: 'Prioritise joint-friendly variations: trap bar over conventional deadlift, machines and dumbbells alongside barbells, and slightly higher reps on the big lifts. Keep some fast, powerful movement in the week, since power declines faster than strength with age. Consistency over decades beats intensity over months by a wide margin.' },
+	{ id: 'women', keys: ['women', 'female', 'girl', 'bulky', 'γυναίκ'], title: 'Training for women',
+		free: 'The training principles are the same. Lifting heavy will not make you bulky, since that requires far more muscle mass than most people appreciate and years of dedicated eating. Women often recover slightly faster between sets and tolerate higher volumes well.',
+		premium: 'Strength gains come at a similar relative rate to men, though absolute numbers differ. Many women find they perform better in the first half of the menstrual cycle and may want to schedule harder sessions there, but this varies enormously between individuals, so track your own pattern rather than assuming. Iron and calcium intake are worth paying more attention to.' },
+	{ id: 'measuring', keys: ['track progress', 'measure', 'body fat', 'scale', 'weigh', 'μέτρηση', 'ζυγαριά'], title: 'Measuring progress',
+		free: 'Use several markers, not just the scale: strength in the gym, waist measurement, photos every four weeks, and how clothes fit. Weight alone is noisy because water, food and glycogen swing it by a kilo or more daily.',
+		premium: 'Weigh yourself at the same time each morning several days a week and compare weekly averages, which removes almost all the noise. Waist measurement at the navel is the most useful single number for fat loss. Photos in the same light and pose beat the mirror, since day-to-day perception is unreliable. Body fat scales and calipers are inconsistent, so use them for trend only.' },
+	{ id: 'gymfear', keys: ['nervous', 'anxious', 'intimidated', 'embarrassed', 'gym anxiety', 'ντρέπομαι', 'άγχος'], title: 'Feeling out of place at the gym',
+		free: 'Almost everyone feels this at first, and nearly nobody is watching. Go at quieter hours to start, take a written plan so you never stand around wondering what is next, and stick to machines until you feel settled.',
+		premium: 'Having a plan on paper removes most of the discomfort, because the anxiety usually comes from not knowing what to do rather than from other people. Learn two or three machines properly and build from there. Most regulars are absorbed in their own session, and the ones who notice a newcomer training seriously tend to respect it.' },
+	{ id: 'equipment', keys: ['machines', 'free weights', 'dumbbell vs', 'barbell vs', 'μηχανήματα', 'ελεύθερα βάρη'], title: 'Machines vs free weights',
+		free: 'Both build muscle. Free weights carry over better to real movement and train stability; machines are easier to learn, safer to push near failure, and better for isolating a muscle. Most good programmes use both.',
+		premium: 'Use free weights for your main strength work early in the session when you are fresh and coordinated, then machines for accessory volume when fatigue makes technique riskier. Machines are particularly useful for training close to failure safely, and for working around a niggle by loading a muscle without loading a painful joint.' },
+	{ id: 'duration', keys: ['how long', 'workout length', 'duration', 'πόση ώρα', 'διάρκεια'], title: 'How long a session should be',
+		free: 'Forty-five to seventy-five minutes of actual work suits most people. Beyond about ninety minutes quality usually drops. If sessions run long, you likely have too many exercises rather than too much rest.',
+		premium: 'Count working sets rather than minutes: fifteen to twenty-five quality sets is a full session for most people. If you are short of time, cut exercises rather than rest periods, since shortened rest lowers the weight on every subsequent set and quietly reduces the whole session. Two focused twenty-minute sessions beat one rushed hour.' },
+	{ id: 'besttime', keys: ['best time', 'morning or evening', 'time of day', 'πότε να γυμνάζομαι'], title: 'Best time of day to train',
+		free: 'The best time is the one you will actually keep. Strength is slightly higher in the late afternoon for most people, but the difference is small and disappears once you adapt to training at a consistent time.',
+		premium: 'If you train early, extend your warm-up, since you are stiffer and core temperature is lower. Training late can affect sleep for some people, particularly with heavy sessions or caffeine within six hours of bed. Consistency of timing matters more than the specific hour, because your body adapts to whenever you regularly train.' },
 ];
 
-const coachChips = ['How many sets should I do?', 'How much protein do I need?', 'How long should I rest?', "I'm stuck at the same weight", 'Is cardio bad for muscle?'];
+const coachGreetings = [
+	{ keys: ['hello', 'hi', 'hey', 'γεια', 'γεια σου', 'καλησπέρα', 'καλημέρα'], reply: 'Hello. Ask me anything about training, nutrition or recovery and I will give you a straight answer.' },
+	{ keys: ['thanks', 'thank you', 'cheers', 'ευχαριστώ'], reply: 'Any time. Ask whenever something comes up in your training.' },
+	{ keys: ['who are you', 'what are you', 'your name', 'ποιος είσαι'], reply: 'I am the Forge coach. I answer questions about strength training, cardio, nutrition, recovery and technique, using your own training log where it helps.' },
+	{ keys: ['what can you do', 'what can you help', 'topics', 'τι μπορείς'], reply: 'Ask me about sets and reps, rest times, how often to train, choosing a split, progressive overload, plateaus, protein, calories, carbs, fat loss, building muscle, supplements, creatine, sleep, soreness, injuries, cardio, technique, training at home, or how to measure progress.' },
+];
+
+const coachChips = ['How much protein do I need?', 'How many sets per muscle?', 'How do I lose fat?', "I'm stuck at the same weight", 'How often should I train?', 'Is creatine worth it?', 'What split should I do?'];
 
 function coachKey() { return `forge-coach-${currentUserKey()}`; }
 function coachUsageKey() { return `forge-coach-usage-${currentUserKey()}`; }
@@ -1136,25 +1185,70 @@ function coachContext() {
 	return `\n\nYour log shows ${thisWeek} of ${target} planned sessions this week, so there is room to add one before changing anything else.`;
 }
 
-function findCoachTopic(question) {
-	const text = question.toLowerCase();
-	let best = null;
-	let bestScore = 0;
-	coachTopics.forEach((topic) => {
-		const score = topic.match.reduce((sum, term) => (text.includes(term) ? sum + term.length : sum), 0);
-		if (score > bestScore) { bestScore = score; best = topic; }
+// Matching works on whole words so that "set" does not fire on "sunset", and a phrase
+// keyword like "how often" scores higher than a single word.
+function normaliseQuestion(text) {
+	return ` ${text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim()} `;
+}
+
+function scoreTopic(topic, haystack) {
+	let score = 0;
+	topic.keys.forEach((key) => {
+		const needle = ` ${key.toLowerCase()} `;
+		if (haystack.includes(needle)) {
+			// Phrases are far more specific than single words, so weight them heavily.
+			score += key.includes(' ') ? 12 : 5;
+		} else if (key.length > 5 && haystack.includes(key.toLowerCase())) {
+			// Catches Greek stems and plurals, e.g. "θερμιδ" inside "θερμίδες".
+			score += 3;
+		}
 	});
-	return bestScore > 0 ? best : null;
+	return score;
+}
+
+function findCoachTopics(question) {
+	const haystack = normaliseQuestion(question);
+	return coachTopics
+		.map((topic) => ({ topic, score: scoreTopic(topic, haystack) }))
+		.filter((entry) => entry.score > 0)
+		.sort((a, b) => b.score - a.score);
+}
+
+function coachProfile() {
+	const profile = JSON.parse(localStorage.getItem('forge-profile') || '{}');
+	return { weight: Number(profile.weight) || null, height: Number(profile.height) || null, target: Number(profile.target) || 4 };
 }
 
 function localCoachAnswer(question) {
-	const topic = findCoachTopic(question);
-	if (!topic) {
-		return "I only cover training, nutrition and recovery, so I cannot help with that one. Try asking about sets and reps, rest times, protein, calories, soreness, sleep, technique, cardio, supplements or breaking a plateau.";
+	const haystack = normaliseQuestion(question);
+
+	const greeting = coachGreetings.find((item) => item.keys.some((key) => haystack.includes(` ${key} `) || haystack.trim() === key));
+	if (greeting) return greeting.reply;
+
+	const matches = findCoachTopics(question);
+	if (!matches.length) {
+		return 'I could not match that to anything I know well. I cover training and nutrition: sets and reps, rest, how often to train, splits, progressive overload, plateaus, protein, calories, carbs, fat loss, building muscle, supplements, sleep, soreness, injuries, cardio, technique and training at home. Try rephrasing with one of those in it.';
 	}
-	let reply = topic.answer;
-	if (isPremium()) reply += `\n\n${topic.premium}${coachContext()}`;
-	else reply += '\n\nPremium subscribers get a longer, more specific answer here, tailored to their own training log.';
+
+	const profile = coachProfile();
+	const premium = isPremium();
+	const primary = matches[0].topic;
+
+	let reply = primary.free;
+	if (primary.calc) reply += primary.calc(profile);
+
+	if (premium) {
+		reply += `\n\n${primary.premium}`;
+		// A question like "protein and calories for fat loss" deserves both answers.
+		const second = matches[1];
+		if (second && second.score >= matches[0].score * 0.6) {
+			reply += `\n\nOn ${second.topic.title.toLowerCase()}: ${second.topic.free}`;
+			if (second.topic.calc) reply += second.topic.calc(profile);
+		}
+		reply += coachContext();
+	} else {
+		reply += '\n\nPremium subscribers get a fuller answer here, with the reasoning, the edge cases and numbers based on their own log.';
+	}
 	return reply;
 }
 
@@ -1215,10 +1309,13 @@ document.querySelector('#coach-clear').addEventListener('click', () => {
 
 function initCoach() { renderCoachQuota(); renderCoachChips(); renderCoachThread(); }
 
-// ---- Accounts: many accounts can live side by side, and the session survives a reload ----
+// ---- Accounts: the Forge server (server/index.js) is the real source of truth. These
+// localStorage-backed helpers are only a fallback for when no server is running — e.g. the
+// standalone preview.html build — so the auth screen still works without a backend. ----
 function loadAccounts() { try { return JSON.parse(localStorage.getItem('forge-accounts') || '{}'); } catch (error) { return {}; } }
 function saveAccounts(accounts) { localStorage.setItem('forge-accounts', JSON.stringify(accounts)); }
-// A tiny non-cryptographic hash so raw passwords never sit in storage. Real apps hash on the server.
+// A tiny non-cryptographic hash so raw passwords never sit in storage in the fallback path.
+// The real server hashes passwords with bcrypt; this is only used when that server is unreachable.
 function hashPassword(password) { let hash = 5381; for (let index = 0; index < password.length; index += 1) hash = ((hash << 5) + hash + password.charCodeAt(index)) >>> 0; return `h${hash.toString(36)}`; }
 
 // ---- Derived stats: every number on screen comes from the user's own saved reports ----
@@ -1346,12 +1443,20 @@ function setAuthMode(signUp) { isSignUp = signUp; document.querySelectorAll('.si
 setAuthMode(false);
 document.querySelector('#auth-switch').addEventListener('click', () => setAuthMode(!isSignUp));
 
-function enterApp(email, profile) {
+const verifyBanner = document.querySelector('#verify-banner');
+function updateVerifyBanner(verified) {
+	if (!verifyBanner) return;
+	verifyBanner.hidden = authMode !== 'server' || verified !== false;
+}
+
+function enterApp(email, profile, options = {}) {
+	authMode = options.mode || 'local';
 	localStorage.setItem('forge-session', email);
 	localStorage.setItem('forge-account', JSON.stringify({ email, ...profile }));
 	localStorage.setItem('forge-profile', JSON.stringify(profile));
 	updateProfile(profile);
 	authScreen.classList.add('hidden');
+	updateVerifyBanner(options.verified);
 	// Per-account data has its own storage key, so refresh anything that reads it.
 	renderWorkoutTemplates();
 	renderNutritionLock();
@@ -1366,6 +1471,8 @@ function enterApp(email, profile) {
 }
 
 function signOut() {
+	if (authMode === 'server') fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+	authMode = 'local';
 	localStorage.removeItem('forge-session');
 	setAuthMode(false);
 	authForm.reset();
@@ -1374,13 +1481,13 @@ function signOut() {
 
 authForm.addEventListener('submit', (event) => {
 	event.preventDefault();
-	try { handleAuthSubmit(); } catch (error) { document.querySelector('#auth-message').textContent = `Something went wrong: ${error.message}`; console.error(error); }
+	handleAuthSubmit().catch((error) => { document.querySelector('#auth-message').textContent = `Something went wrong: ${error.message}`; console.error(error); });
 });
 
-function handleAuthSubmit() {
-	const email = document.querySelector('#auth-email').value.trim().toLowerCase();
-	const password = document.querySelector('#auth-password').value;
-	const message = document.querySelector('#auth-message');
+// Used only when the Forge server (server/index.js) isn't reachable — e.g. the standalone
+// preview.html build, or the static files opened without starting the backend — so the auth
+// screen still works, just without cross-device sync or email verification.
+function handleAuthSubmitLocal(email, password, message) {
 	const accounts = loadAccounts();
 
 	if (isSignUp) {
@@ -1396,18 +1503,81 @@ function handleAuthSubmit() {
 		};
 		accounts[email] = { email, password: hashPassword(password), profile };
 		saveAccounts(accounts);
-		enterApp(email, profile);
+		enterApp(email, profile, { mode: 'local' });
 		showToast(`Welcome to Forge, ${profile.name.split(' ')[0]}.`);
 		return;
 	}
 
 	const account = accounts[email];
 	if (!account || account.password !== hashPassword(password)) { message.textContent = 'No matching account. Check your details or create one.'; return; }
-	enterApp(email, account.profile);
+	enterApp(email, account.profile, { mode: 'local' });
 	showToast(`Welcome back, ${account.profile.name.split(' ')[0]}.`);
 }
 
+// Real accounts live on the Forge server: hashed passwords, a session that survives across
+// browsers and devices, and a verification email on signup. Falls back to local-only accounts
+// automatically if that server can't be reached.
+async function handleAuthSubmit() {
+	const email = document.querySelector('#auth-email').value.trim().toLowerCase();
+	const password = document.querySelector('#auth-password').value;
+	const message = document.querySelector('#auth-message');
+	message.textContent = '';
+
+	const endpoint = isSignUp ? '/api/auth/signup' : '/api/auth/login';
+	const payload = isSignUp
+		? {
+			email,
+			password,
+			name: document.querySelector('#auth-name').value.trim(),
+			height: document.querySelector('#auth-height').value,
+			weight: document.querySelector('#auth-weight').value,
+			gender: document.querySelector('#auth-gender').value,
+			focus: document.querySelector('#auth-focus').value,
+			target: document.querySelector('#auth-target').value,
+		}
+		: { email, password };
+
+	let response;
+	try {
+		response = await fetch(endpoint, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify(payload),
+		});
+	} catch (networkError) {
+		handleAuthSubmitLocal(email, password, message);
+		return;
+	}
+
+	const data = await response.json().catch(() => ({}));
+	if (!response.ok) { message.textContent = data.error || 'Something went wrong.'; return; }
+
+	enterApp(data.user.email, data.user.profile, { mode: 'server', verified: data.user.verified });
+	if (isSignUp) {
+		showToast(data.user.verified ? `Welcome to Forge, ${data.user.profile.name.split(' ')[0]}.` : `Welcome to Forge. Check ${data.user.email} to verify your account.`);
+	} else {
+		showToast(`Welcome back, ${data.user.profile.name.split(' ')[0]}.`);
+	}
+}
+
 document.querySelector('#sign-out').addEventListener('click', signOut);
+
+const verifyResendButton = document.querySelector('#verify-resend');
+if (verifyResendButton) {
+	verifyResendButton.addEventListener('click', async () => {
+		verifyResendButton.disabled = true;
+		try {
+			const response = await fetch('/api/auth/resend-verification', { method: 'POST', credentials: 'include' });
+			const data = await response.json().catch(() => ({}));
+			showToast(response.ok ? 'Verification email sent.' : (data.error || 'Could not send the email.'));
+		} catch (error) {
+			showToast('Could not reach the server.');
+		} finally {
+			verifyResendButton.disabled = false;
+		}
+	});
+}
 
 const profilePage = document.querySelector('#profile-page');
 function openProfilePage() { profilePage.classList.add('open'); profilePage.setAttribute('aria-hidden', 'false'); }
@@ -1419,10 +1589,32 @@ document.querySelector('#profile-settings').addEventListener('click', () => { cl
 document.querySelector('#profile-page-sign-out').addEventListener('click', () => { closeProfilePage(); signOut(); });
 
 // ---- Session restore: if someone is already signed in, skip the auth screen entirely ----
-(function restoreSession() {
+(async function restoreSession() {
+	// A real server session (httpOnly cookie) takes priority — it's what lets someone reopen
+	// the app, or open it on another device, without signing up again.
+	try {
+		const response = await fetch('/api/auth/me', { credentials: 'include' });
+		if (response.ok) {
+			const data = await response.json();
+			enterApp(data.user.email, data.user.profile, { mode: 'server', verified: data.user.verified });
+			return;
+		}
+	} catch (error) {
+		// No server running — fall through to the local-only session below.
+	}
+
 	const email = localStorage.getItem('forge-session');
 	if (!email) return;
 	const account = loadAccounts()[email];
 	if (!account) { localStorage.removeItem('forge-session'); return; }
-	enterApp(email, account.profile);
+	enterApp(email, account.profile, { mode: 'local' });
+})();
+
+// After clicking an email verification link, the server redirects back here with ?verify=...
+(function handleVerifyRedirect() {
+	const verifyParam = new URLSearchParams(window.location.search).get('verify');
+	if (!verifyParam) return;
+	if (verifyParam === 'success') { showToast('Email verified. Thanks!'); updateVerifyBanner(true); }
+	else if (verifyParam === 'expired') { showToast('That verification link expired or is invalid.'); }
+	window.history.replaceState({}, '', window.location.pathname);
 })();

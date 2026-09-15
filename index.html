@@ -26,6 +26,7 @@
     .billing-toggle{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:17px}.billing-option{background:#30423b;color:#b8c8b9;padding:11px 8px;text-align:left;border:1px solid transparent;font-size:10px}.billing-option strong,.billing-option small{display:block}.billing-option strong{color:white;font-size:15px;margin-top:5px}.billing-option small{font-size:8px;margin-top:3px}.billing-option.active{border-color:var(--lime);background:#3d5147;color:white}.premium-features{grid-template-columns:1fr 1fr}.premium-feature span{line-height:1.4}.theme-group{margin:12px 0 17px}.theme-group>span{font:9px var(--mono);color:var(--muted);text-transform:uppercase}.theme-group .theme-row{margin-top:7px}
     .payment-summary{background:var(--lime);padding:12px;font:500 13px var(--mono);margin:0 0 20px}.secure-note{display:block;color:var(--muted);font-size:9px;line-height:1.4;margin-top:12px}
     .premium-banner{display:flex;align-items:center;justify-content:space-between;background:var(--lime);padding:16px;margin-top:20px}.premium-banner b,.premium-banner span{display:block}.premium-banner b{font-size:12px}.premium-banner span{font-size:9px;margin-top:5px}.premium-price{font:500 11px var(--mono)}.premium-card{background:var(--ink);color:white;padding:20px;margin-bottom:12px}.premium-card h3{font-size:23px;margin:5px 0 8px}.premium-card p{font-size:10px;color:#b8c8b9;line-height:1.5}.premium-card .primary-button{margin-top:17px}.premium-features{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.premium-feature{background:white;border:1px solid var(--line);padding:14px}.premium-feature b,.premium-feature span{display:block}.premium-feature b{font-size:11px}.premium-feature span{font-size:9px;color:var(--muted);margin-top:5px}.tracker-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.tracker-card{background:white;border:1px solid var(--line);padding:14px}.tracker-card label{display:block;font:9px var(--mono);color:var(--muted);margin-bottom:8px}.tracker-card input{width:100%;padding:9px;border:1px solid var(--line);font:12px var(--sans)}.tracker-card small{display:block;color:var(--muted);font-size:9px;margin-top:7px}.report-card{background:white;border:1px solid var(--line);padding:16px;margin-top:12px}.report-card b,.report-card span{display:block}.report-card b{font-size:13px}.report-card span{font-size:10px;color:var(--muted);margin-top:5px}.theme-row{display:flex;gap:8px;margin-top:10px}.theme-swatch{width:30px;height:30px;border:2px solid transparent}.theme-swatch.active{border-color:var(--ink)}
+    .verify-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#ffd4ca;color:var(--ink);padding:11px 13px;font-size:10px;font-weight:700;margin:-10px 0 20px;border-radius:3px}.verify-banner[hidden]{display:none}.verify-banner button{background:var(--ink);color:white;padding:7px 10px;font-size:9px;font-weight:800;border-radius:2px;flex-shrink:0;white-space:nowrap}
   </style>
 </head>
 <body>
@@ -55,6 +56,11 @@
       </div>
       <div class="topbar-actions"><select class="language-select" id="app-language-select" aria-label="Select language"><option value="en">EN</option><option value="es">ES</option><option value="fr">FR</option><option value="de">DE</option><option value="pt">PT</option><option value="el">EL</option><option value="ar">AR</option></select><button class="avatar" id="topbar-avatar" aria-label="Open profile" data-profile>AC</button></div>
     </header>
+
+    <div class="verify-banner" id="verify-banner" hidden>
+      <span>Verify your email to secure your account.</span>
+      <button type="button" id="verify-resend">Resend email</button>
+    </div>
 
     <section class="hero-panel">
       <div class="hero-copy">
