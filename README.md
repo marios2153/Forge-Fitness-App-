@@ -43,8 +43,15 @@ Real accounts live on the included backend (`server/`): passwords are hashed wit
 
 If the server isn't running (for example, `preview.html` opened on its own), the app falls back to a localStorage-only account store scoped to that browser, so the auth screen still works without a backend — just without cross-device sync or email verification.
 
+### Localization
+Seven interface languages — English, Spanish, French, German, Portuguese, Greek and Arabic — cover the whole app, not just the menus and buttons: the exercise library, all ten Premium recipes, the AI coach's full knowledge base, achievement badges, and every toast and confirmation message are translated too. Arabic renders fully right-to-left.
+
+Translation is exact-string-based (an English source string maps to its translation per language) and applies live: switching language re-walks the page and re-applies immediately. A `MutationObserver` then keeps watching, so anything the app renders *afterwards* — opening a modal, filtering the exercise library, a friend request arriving, the AI coach replying — gets translated automatically too, without every render function needing to remember to call the translator itself. Form placeholders and dropdown options are translated along with visible text, and dates are formatted using the selected language's locale rather than the browser's.
+
+The AI coach's quick-reply chips (e.g. "How much protein do I need?") resolve to a fixed topic id under the hood, so clicking one always gets the right answer regardless of which language its label is displayed in — free-text questions still rely on keyword matching, which works best in English.
+
 ### Other
-Seven interface languages (English, Spanish, French, German, Portuguese, Greek, Arabic) with full right-to-left support for Arabic. Installable to a phone home screen as a PWA.
+Installable to a phone home screen as a PWA.
 
 ---
 
