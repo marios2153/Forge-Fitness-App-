@@ -1,0 +1,21 @@
+{
+  "name": "forge-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend for Forge — persistent accounts, sessions, signup email verification, and account data (workouts, goals, etc.) in SQLite.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.14"
+  }
+}
