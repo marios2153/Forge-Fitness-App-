@@ -216,6 +216,82 @@ document.querySelectorAll('#language-select, #app-language-select').forEach((sel
 applyLanguage(localStorage.getItem('forge-language') || 'en');
 
 function currentUserKey() { const email = localStorage.getItem('forge-session'); return (email || 'guest').toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
+
+// ---- Server-side account data sync ----------------------------------------------------
+// Mirrors localStorage into the signed-in account (SQLite-backed, see server/db.js and the
+// /api/data routes) whenever a real server session is active, so workouts/goals/etc. follow
+// the account across browsers and devices instead of being stranded in one browser. In
+// 'local' mode (no server reachable) every function below is a no-op and nothing changes.
+// Per-account keys already carry the account's slug (via currentUserKey()) in their raw
+// localStorage key, so only these two lists need to know the *canonical* (server-side) name.
+const SYNCED_ACCOUNT_KEYS = ['avatar', 'badges', 'calendar', 'coach', 'coach-usage', 'friends', 'goals', 'prs', 'reports', 'requests', 'workouts'];
+const SYNCED_GLOBAL_KEYS = ['billing', 'premium', 'subscription', 'theme', 'language', 'tracking', 'nutrition-goal', 'reminders', 'reminder-settings', 'last-invite'];
+function rawStorageKeyFor(canonicalKey) { return SYNCED_ACCOUNT_KEYS.includes(canonicalKey) ? `forge-${canonicalKey}-${currentUserKey()}` : `forge-${canonicalKey}`; }
+function canonicalSyncKeyFor(rawKey) {
+	const withoutPrefix = rawKey.startsWith('forge-') ? rawKey.slice('forge-'.length) : null;
+	if (withoutPrefix && SYNCED_GLOBAL_KEYS.includes(withoutPrefix)) return withoutPrefix;
+	const slug = currentUserKey();
+	for (const name of SYNCED_ACCOUNT_KEYS) { if (rawKey === `forge-${name}-${slug}`) return name; }
+	return null;
+}
+
+const nativeSetItem = Storage.prototype.setItem.bind(localStorage);
+const nativeRemoveItem = Storage.prototype.removeItem.bind(localStorage);
+const pendingSync = new Map();
+let syncTimer = null;
+function flushServerSync() {
+	if (!pendingSync.size) return;
+	const values = Object.fromEntries(pendingSync);
+	pendingSync.clear();
+	fetch('/api/data/bulk', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ values }) })
+		.catch((error) => console.error('Could not save your data to the server:', error));
+}
+function queueServerSync(canonicalKey, value) {
+	if (authMode !== 'server') return;
+	pendingSync.set(canonicalKey, value);
+	clearTimeout(syncTimer);
+	syncTimer = setTimeout(flushServerSync, 600);
+}
+// Every existing save*()/load*() call site in this file already goes through
+// localStorage.setItem/removeItem directly, so patching those two methods here is what lets
+// all of them sync to the server without editing each call site individually.
+localStorage.setItem = function patchedSetItem(key, value) {
+	nativeSetItem(key, value);
+	const canonicalKey = canonicalSyncKeyFor(key);
+	if (canonicalKey) queueServerSync(canonicalKey, value);
+};
+localStorage.removeItem = function patchedRemoveItem(key) {
+	nativeRemoveItem(key);
+	const canonicalKey = canonicalSyncKeyFor(key);
+	if (canonicalKey) queueServerSync(canonicalKey, null);
+};
+
+// Pulls everything saved on the server into this browser's localStorage. The first time an
+// account signs into server mode from a browser that already has local data the server
+// doesn't have yet (e.g. it was used before this feature existed), that local data is pushed
+// up instead of silently being overwritten with nothing.
+async function hydrateFromServer() {
+	let values = {};
+	try {
+		const response = await fetch('/api/data', { credentials: 'include' });
+		if (response.ok) ({ values = {} } = await response.json());
+	} catch (error) {
+		console.error('Could not load your saved data from the server:', error);
+		return;
+	}
+	[...SYNCED_ACCOUNT_KEYS, ...SYNCED_GLOBAL_KEYS].forEach((canonicalKey) => {
+		const rawKey = rawStorageKeyFor(canonicalKey);
+		if (Object.prototype.hasOwnProperty.call(values, canonicalKey)) {
+			const value = values[canonicalKey];
+			if (value === null) nativeRemoveItem(rawKey);
+			else nativeSetItem(rawKey, value);
+		} else {
+			const existing = localStorage.getItem(rawKey);
+			if (existing !== null) queueServerSync(canonicalKey, existing);
+		}
+	});
+	flushServerSync();
+}
 function runnerExercises(workout) { return workout.exercises.map((exercise) => ({ ...exercise, completedSets: 0, started: false, running: false, finished: false, setStartedAt: null, totalTime: 0, setTimes: [] })); }
 function formatTime(seconds) { return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
 function runnerButtonLabel(exercise) {
@@ -1439,7 +1515,7 @@ renderFriends();
 initCoach();
 
 const authForm = document.querySelector('#auth-form');
-function setAuthMode(signUp) { isSignUp = signUp; document.querySelectorAll('.signup-only').forEach((element) => { element.classList.toggle('visible', isSignUp); element.querySelectorAll('input, select').forEach((field) => { field.required = isSignUp; }); }); document.querySelector('#auth-submit').innerHTML = isSignUp ? 'Create account <span>-></span>' : 'Sign in <span>-></span>'; document.querySelector('#auth-switch').textContent = isSignUp ? 'Already have an account? Sign in' : 'New here? Create an account'; document.querySelector('#auth-message').textContent = ''; }
+function setAuthMode(signUp) { isSignUp = signUp; document.querySelectorAll('.signup-only').forEach((element) => { element.classList.toggle('visible', isSignUp); element.querySelectorAll('input, select').forEach((field) => { field.required = isSignUp; }); }); document.querySelectorAll('.signin-only').forEach((element) => element.classList.toggle('hidden', isSignUp)); document.querySelector('#auth-submit').innerHTML = isSignUp ? 'Create account <span>-></span>' : 'Sign in <span>-></span>'; document.querySelector('#auth-switch').textContent = isSignUp ? 'Already have an account? Sign in' : 'New here? Create an account'; document.querySelector('#auth-message').textContent = ''; }
 setAuthMode(false);
 document.querySelector('#auth-switch').addEventListener('click', () => setAuthMode(!isSignUp));
 
@@ -1449,7 +1525,7 @@ function updateVerifyBanner(verified) {
 	verifyBanner.hidden = authMode !== 'server' || verified !== false;
 }
 
-function enterApp(email, profile, options = {}) {
+async function enterApp(email, profile, options = {}) {
 	authMode = options.mode || 'local';
 	localStorage.setItem('forge-session', email);
 	localStorage.setItem('forge-account', JSON.stringify({ email, ...profile }));
@@ -1457,6 +1533,7 @@ function enterApp(email, profile, options = {}) {
 	updateProfile(profile);
 	authScreen.classList.add('hidden');
 	updateVerifyBanner(options.verified);
+	if (authMode === 'server') await hydrateFromServer();
 	// Per-account data has its own storage key, so refresh anything that reads it.
 	renderWorkoutTemplates();
 	renderNutritionLock();
@@ -1474,6 +1551,9 @@ function signOut() {
 	if (authMode === 'server') fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
 	authMode = 'local';
 	localStorage.removeItem('forge-session');
+	// Global (non-namespaced) keys are shared storage slots, not scoped to one account — clear
+	// them so the next account signed into this browser doesn't inherit this one's data.
+	SYNCED_GLOBAL_KEYS.forEach((canonicalKey) => localStorage.removeItem(rawStorageKeyFor(canonicalKey)));
 	setAuthMode(false);
 	authForm.reset();
 	authScreen.classList.remove('hidden');
@@ -1553,7 +1633,7 @@ async function handleAuthSubmit() {
 	const data = await response.json().catch(() => ({}));
 	if (!response.ok) { message.textContent = data.error || 'Something went wrong.'; return; }
 
-	enterApp(data.user.email, data.user.profile, { mode: 'server', verified: data.user.verified });
+	await enterApp(data.user.email, data.user.profile, { mode: 'server', verified: data.user.verified });
 	if (isSignUp) {
 		showToast(data.user.verified ? `Welcome to Forge, ${data.user.profile.name.split(' ')[0]}.` : `Welcome to Forge. Check ${data.user.email} to verify your account.`);
 	} else {
@@ -1579,6 +1659,90 @@ if (verifyResendButton) {
 	});
 }
 
+const authForgotButton = document.querySelector('#auth-forgot');
+if (authForgotButton) {
+	authForgotButton.addEventListener('click', () => {
+		document.querySelector('#forgot-email').value = document.querySelector('#auth-email').value.trim();
+		document.querySelector('#forgot-password-message').textContent = '';
+		showModal('forgot-password-modal');
+	});
+}
+
+const forgotPasswordForm = document.querySelector('#forgot-password-form');
+if (forgotPasswordForm) {
+	forgotPasswordForm.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const email = document.querySelector('#forgot-email').value.trim().toLowerCase();
+		const message = document.querySelector('#forgot-password-message');
+		const submitButton = forgotPasswordForm.querySelector('button[type="submit"]');
+		submitButton.disabled = true;
+		try {
+			const response = await fetch('/api/auth/forgot-password', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email }),
+			});
+			// The server always answers the same way here, whether or not that email has an
+			// account — so this message can't be used to find out who's registered.
+			if (response.ok) message.style.color = 'var(--lime)';
+			message.textContent = response.ok
+				? `If an account exists for ${email}, a reset link is on its way.`
+				: (await response.json().catch(() => ({}))).error || 'Something went wrong.';
+		} catch (error) {
+			message.textContent = 'Could not reach the server. Is it running?';
+		} finally {
+			submitButton.disabled = false;
+		}
+	});
+}
+
+// A password-reset email link points back at the app itself with ?reset=<token>&email=...
+// (see issuePasswordReset in server/index.js), so this just needs to notice those params on
+// load and let the person choose a new password — the actual reset happens in the form
+// handler below, once they submit it.
+let pendingReset = null;
+(function handlePasswordResetRedirect() {
+	const params = new URLSearchParams(window.location.search);
+	const token = params.get('reset');
+	const email = params.get('email');
+	if (!token || !email) return;
+	pendingReset = { token, email };
+	document.querySelector('#reset-password-message').textContent = '';
+	showModal('reset-password-modal');
+	window.history.replaceState({}, '', window.location.pathname);
+})();
+
+const resetPasswordForm = document.querySelector('#reset-password-form');
+if (resetPasswordForm) {
+	resetPasswordForm.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const message = document.querySelector('#reset-password-message');
+		if (!pendingReset) { message.textContent = 'That reset link is invalid or has expired.'; return; }
+		const password = document.querySelector('#reset-new-password').value;
+		const submitButton = resetPasswordForm.querySelector('button[type="submit"]');
+		submitButton.disabled = true;
+		try {
+			const response = await fetch('/api/auth/reset-password', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'include',
+				body: JSON.stringify({ token: pendingReset.token, email: pendingReset.email, password }),
+			});
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) { message.textContent = data.error || 'Something went wrong.'; return; }
+			pendingReset = null;
+			closeModal();
+			resetPasswordForm.reset();
+			await enterApp(data.user.email, data.user.profile, { mode: 'server', verified: data.user.verified });
+			showToast('Password updated. You’re signed in.');
+		} catch (error) {
+			message.textContent = 'Could not reach the server. Is it running?';
+		} finally {
+			submitButton.disabled = false;
+		}
+	});
+}
+
 const profilePage = document.querySelector('#profile-page');
 function openProfilePage() { profilePage.classList.add('open'); profilePage.setAttribute('aria-hidden', 'false'); }
 function closeProfilePage() { profilePage.classList.remove('open'); profilePage.setAttribute('aria-hidden', 'true'); }
@@ -1596,7 +1760,7 @@ document.querySelector('#profile-page-sign-out').addEventListener('click', () =>
 		const response = await fetch('/api/auth/me', { credentials: 'include' });
 		if (response.ok) {
 			const data = await response.json();
-			enterApp(data.user.email, data.user.profile, { mode: 'server', verified: data.user.verified });
+			await enterApp(data.user.email, data.user.profile, { mode: 'server', verified: data.user.verified });
 			return;
 		}
 	} catch (error) {
