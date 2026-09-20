@@ -866,31 +866,79 @@ function renderDayDetail() {
 	panel.querySelectorAll('[data-edit-day]').forEach((button) => button.addEventListener('click', () => openDayModal(Number(button.dataset.editDay))));
 }
 
-function openDayModal(day) {
-	selectedDay = day;
-	const entry = calendar[day] || { time: '18:00', duration: 60, note: '' };
-	document.querySelector('#day-modal-eyebrow').textContent = `${t(MONTH_LABEL).toUpperCase()} ${day}`;
-	document.querySelector('#day-modal-title').textContent = t('Set your session time');
+let dayModalType = 'training';
+function setDayModalType(type) {
+	dayModalType = type;
+	document.querySelectorAll('.day-type-option').forEach((button) => button.classList.toggle('active', button.dataset.dayType === type));
+	document.querySelector('#day-training-fields').classList.toggle('hidden', type === 'rest');
+}
+document.querySelectorAll('.day-type-option').forEach((button) => button.addEventListener('click', () => setDayModalType(button.dataset.dayType)));
+
+// Populates the form for a given day (or sensible defaults when day is null, i.e. nothing
+// picked yet in the "add a day" flow) and shows/hides the done/clear actions to match.
+function loadDayFormFields(day) {
+	const entry = (day != null && calendar[day]) || { time: '18:00', duration: 60, note: '', status: 'training' };
+	setDayModalType(entry.status === 'rest' ? 'rest' : 'training');
 	document.querySelector('#day-time').value = entry.time || '18:00';
 	document.querySelector('#day-duration').value = entry.duration || 60;
 	document.querySelector('#day-note').value = entry.note || '';
-	document.querySelector('#day-mark-done').textContent = entry.completed ? t('Mark as not completed') : t('Mark as completed');
+	const exists = day != null && !!calendar[day];
+	document.querySelector('#day-mark-done').style.display = exists ? '' : 'none';
+	document.querySelector('#day-clear').style.display = exists ? '' : 'none';
+	if (exists) document.querySelector('#day-mark-done').textContent = entry.completed ? t('Mark as not completed') : t('Mark as completed');
+}
+
+// Called with a day number to edit that day directly (the pencil icon), or with no argument
+// to open the "+ Add a day" flow, which lets you type any day of the month first.
+function openDayModal(day) {
+	const isAdd = day === undefined || day === null;
+	document.querySelector('#day-picker-label').classList.toggle('hidden', !isAdd);
+	document.querySelector('#day-modal-title').textContent = isAdd ? t('Add a day') : t('Set your session time');
+	if (isAdd) {
+		selectedDay = null;
+		document.querySelector('#day-picker').value = '';
+		document.querySelector('#day-modal-eyebrow').textContent = t('NEW DAY');
+	} else {
+		selectedDay = day;
+		document.querySelector('#day-modal-eyebrow').textContent = `${t(MONTH_LABEL).toUpperCase()} ${day}`;
+	}
+	loadDayFormFields(selectedDay);
 	showModal('day-modal');
 }
+document.querySelector('#add-calendar-day').addEventListener('click', () => openDayModal());
+document.querySelector('#day-picker').addEventListener('input', () => {
+	const value = Number(document.querySelector('#day-picker').value);
+	if (value >= 1 && value <= DAYS_IN_MONTH) {
+		selectedDay = value;
+		document.querySelector('#day-modal-eyebrow').textContent = `${t(MONTH_LABEL).toUpperCase()} ${value}`;
+		loadDayFormFields(value);
+	} else {
+		selectedDay = null;
+	}
+});
 
 document.querySelector('#day-form').addEventListener('submit', (event) => {
 	event.preventDefault();
-	calendar[selectedDay] = {
-		...calendar[selectedDay],
-		status: 'training',
-		time: document.querySelector('#day-time').value,
-		duration: Number(document.querySelector('#day-duration').value) || 60,
-		note: document.querySelector('#day-note').value.trim(),
-	};
+	const day = selectedDay || Number(document.querySelector('#day-picker').value);
+	if (!day || day < 1 || day > DAYS_IN_MONTH) { showToast(t('Pick a valid day of the month first.')); return; }
+	selectedDay = day;
+	if (dayModalType === 'rest') {
+		calendar[day] = { status: 'rest' };
+	} else {
+		calendar[day] = {
+			...calendar[day],
+			status: 'training',
+			time: document.querySelector('#day-time').value,
+			duration: Number(document.querySelector('#day-duration').value) || 60,
+			note: document.querySelector('#day-note').value.trim(),
+		};
+	}
 	saveCalendar(calendar);
 	renderCalendar();
 	closeModal();
-	showToast(`${t(MONTH_LABEL)} ${selectedDay} ${t('set for')} ${formatClock(calendar[selectedDay].time)}.`);
+	showToast(dayModalType === 'rest'
+		? `${t(MONTH_LABEL)} ${day} ${t('marked as a rest day.')}`
+		: `${t(MONTH_LABEL)} ${day} ${t('set for')} ${formatClock(calendar[day].time)}.`);
 });
 
 document.querySelector('#day-mark-done').addEventListener('click', () => {
