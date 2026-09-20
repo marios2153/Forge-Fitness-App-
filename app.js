@@ -187,7 +187,7 @@ function closeModal() { document.querySelector('#modal-backdrop').classList.remo
 
 // The runner owns one guided session from start to report. It deliberately keeps report data separate per account.
 document.querySelector('#modal-backdrop').insertAdjacentHTML('afterbegin', '<section class="modal-panel runner-modal" id="runner-modal"><div class="runner-head"><div><p class="eyebrow">ACTIVE WORKOUT</p><h2 id="runner-title">Push strength</h2></div><button class="modal-close">×</button></div><div class="runner-meta"><span id="runner-progress">Exercise 1 of 1</span><div class="timer-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-fill" id="runner-ring" cx="60" cy="60" r="52"/></svg><strong id="runner-timer">00:00</strong></div></div><div id="hydration-banner" class="hydration-banner"><span class="hydration-icon">💧</span><div><b>Halfway there — drink some water</b><span>A few sips now keeps your strength up for the rest of the session.</span></div><button type="button" class="hydration-close" aria-label="Dismiss">×</button></div><div id="runner-exercise-list"></div><p class="runner-status" id="runner-status"></p><button class="secondary-button full" id="runner-finish">Finish workout</button></section><section class="modal-panel report-modal" id="report-modal"><button class="modal-close">×</button><p class="eyebrow">WORKOUT REPORT</p><h2>Session complete</h2><div class="report-summary" id="report-summary"></div><button class="primary-button full" id="report-done">Done</button></section><section class="modal-panel reports-modal" id="reports-modal"><button class="modal-close">×</button><p class="eyebrow">SAVED REPORTS</p><h2>Your workout history</h2><div id="reports-list"></div></section>');
-document.body.insertAdjacentHTML('beforeend', '<div class="menu-sheet" id="menu-sheet"><button class="menu-close" id="menu-close">×</button><p class="eyebrow">FORGE MENU</p><h2>More sections</h2><div class="menu-grid"><button data-menu-tab="coach">✦ <span>AI Coach</span></button><button data-menu-tab="social">♧ <span>Social</span></button><button data-menu-tab="goals">◎ <span>Goals</span></button><button data-menu-tab="premium">◆ <span>Premium</span></button><button id="open-reports">▤ <span>Reports</span></button><button data-menu-tab="profile">● <span>Profile</span></button></div></div>');
+document.body.insertAdjacentHTML('beforeend', '<div class="menu-sheet" id="menu-sheet"><button class="menu-close" id="menu-close">×</button><p class="eyebrow">FORGE MENU</p><h2>More sections</h2><div class="menu-grid"><button data-menu-tab="coach">✦ <span>AI Coach</span></button><button data-menu-tab="social">♧ <span>Social</span></button><button data-menu-tab="goals">◎ <span>Goals</span></button><button data-menu-tab="premium">◆ <span>Premium</span></button><button id="open-reports">▤ <span>Reports</span></button><button data-menu-tab="profile">● <span>Profile</span></button><button data-menu-tab="settings">⚙ <span>Settings</span></button></div></div>');
 const menuSheet = document.querySelector('#menu-sheet');
 function openMenu() { menuSheet.classList.add('open'); }
 function closeMenu() { menuSheet.classList.remove('open'); }
@@ -249,9 +249,24 @@ function translateStaticText(language) {
 	});
 	if (language !== 'en') languageObserver.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: TRANSLATABLE_ATTRS });
 }
-function applyLanguage(language) { const copy = languageCatalog[language] || languageCatalog.en; currentLanguage = language; document.documentElement.lang = language; document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'; translateStaticText(language); const picker = document.querySelector('.language-picker'); if (picker) picker.firstChild.textContent = `${copy.language} `; const start = document.querySelector('#start-workout'); if (start) start.firstChild.textContent = `${copy.start} `; const finish = document.querySelector('#runner-finish'); if (finish) finish.firstChild.textContent = `${copy.finish} `; document.querySelector('#menu-sheet h2').textContent = copy.menu; document.querySelector('#reports-modal h2').textContent = copy.reports; localStorage.setItem('forge-language', language); document.querySelectorAll('#language-select, #app-language-select').forEach((select) => { select.value = language; }); if (runner) renderRunner(); }
-document.querySelectorAll('#language-select, #app-language-select').forEach((select) => select.addEventListener('change', (event) => applyLanguage(event.target.value)));
+function applyLanguage(language) { const copy = languageCatalog[language] || languageCatalog.en; currentLanguage = language; document.documentElement.lang = language; document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'; translateStaticText(language); const picker = document.querySelector('.language-picker'); if (picker) picker.firstChild.textContent = `${copy.language} `; const start = document.querySelector('#start-workout'); if (start) start.firstChild.textContent = `${copy.start} `; const finish = document.querySelector('#runner-finish'); if (finish) finish.firstChild.textContent = `${copy.finish} `; document.querySelector('#menu-sheet h2').textContent = copy.menu; document.querySelector('#reports-modal h2').textContent = copy.reports; localStorage.setItem('forge-language', language); document.querySelectorAll('#language-select, #app-language-select, #settings-language-select').forEach((select) => { select.value = language; }); if (runner) renderRunner(); }
+document.querySelectorAll('#language-select, #app-language-select, #settings-language-select').forEach((select) => select.addEventListener('change', (event) => applyLanguage(event.target.value)));
 applyLanguage(localStorage.getItem('forge-language') || 'en');
+
+// ---- Appearance: light / dark / system, independent of the Premium accent-colour swatches ----
+const colorSchemeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+function resolveColorScheme(preference) { return preference === 'system' ? (colorSchemeMedia.matches ? 'dark' : 'light') : preference; }
+function applyColorScheme(preference) {
+	const resolved = resolveColorScheme(preference);
+	document.documentElement.setAttribute('data-theme', resolved);
+	localStorage.setItem('forge-color-scheme', preference);
+	document.querySelectorAll('.theme-choice').forEach((button) => button.classList.toggle('active', button.dataset.scheme === preference));
+	const meta = document.querySelector('#theme-color-meta');
+	if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0a0b0d' : '#f6f6f4');
+}
+document.querySelectorAll('.theme-choice').forEach((button) => button.addEventListener('click', () => applyColorScheme(button.dataset.scheme)));
+colorSchemeMedia.addEventListener('change', () => { if ((localStorage.getItem('forge-color-scheme') || 'system') === 'system') applyColorScheme('system'); });
+applyColorScheme(localStorage.getItem('forge-color-scheme') || 'system');
 
 function currentUserKey() { const email = localStorage.getItem('forge-session'); return (email || 'guest').toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
 
@@ -964,10 +979,19 @@ document.querySelector('#day-clear').addEventListener('click', () => {
 function initCalendar() { calendar = loadCalendar(); selectedDay = null; renderCalendar(); }
 initCalendar();
 
-document.querySelector('#reminder-toggle').addEventListener('click', async (event) => { event.currentTarget.classList.toggle('active'); const enabled = event.currentTarget.classList.contains('active'); if (enabled && 'Notification' in window && Notification.permission === 'default') await Notification.requestPermission(); localStorage.setItem('forge-reminders', String(enabled)); showToast(enabled ? t('Weekly reminders enabled.') : t('Weekly reminders paused.')); });
-document.querySelector('#schedule-reminder').addEventListener('click', () => showModal('reminder-modal'));
-document.querySelector('#reminder-form').addEventListener('submit', (event) => { event.preventDefault(); const days = document.querySelector('#reminder-days').value; const time = document.querySelector('#reminder-time').value; localStorage.setItem('forge-reminder-settings', JSON.stringify({ days, time })); document.querySelector('#reminder-status').textContent = `${t('Every')} ${days} ${t('at')} ${time}`; event.target.reset(); closeModal(); showToast(t('Reminder saved.')); });
-const savedReminder = JSON.parse(localStorage.getItem('forge-reminder-settings') || 'null'); if (savedReminder) document.querySelector('#reminder-status').textContent = `${t('Every')} ${savedReminder.days} ${t('at')} ${savedReminder.time}`;
+// The calendar tab and the Settings screen each show their own reminder toggle/status, kept in sync.
+function setReminderStatusText(text) { document.querySelectorAll('#reminder-status, #settings-reminder-status').forEach((node) => { node.textContent = text; }); }
+document.querySelectorAll('#reminder-toggle, #settings-reminder-toggle').forEach((toggle) => toggle.addEventListener('click', async () => {
+	const enabled = !toggle.classList.contains('active');
+	if (enabled && 'Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
+	document.querySelectorAll('#reminder-toggle, #settings-reminder-toggle').forEach((node) => node.classList.toggle('active', enabled));
+	localStorage.setItem('forge-reminders', String(enabled));
+	showToast(enabled ? t('Weekly reminders enabled.') : t('Weekly reminders paused.'));
+}));
+document.querySelectorAll('#schedule-reminder, #settings-schedule-reminder').forEach((button) => button.addEventListener('click', () => showModal('reminder-modal')));
+document.querySelector('#reminder-form').addEventListener('submit', (event) => { event.preventDefault(); const days = document.querySelector('#reminder-days').value; const time = document.querySelector('#reminder-time').value; localStorage.setItem('forge-reminder-settings', JSON.stringify({ days, time })); setReminderStatusText(`${t('Every')} ${days} ${t('at')} ${time}`); event.target.reset(); closeModal(); showToast(t('Reminder saved.')); });
+const savedReminder = JSON.parse(localStorage.getItem('forge-reminder-settings') || 'null'); if (savedReminder) setReminderStatusText(`${t('Every')} ${savedReminder.days} ${t('at')} ${savedReminder.time}`);
+document.querySelectorAll('#reminder-toggle, #settings-reminder-toggle').forEach((node) => node.classList.toggle('active', localStorage.getItem('forge-reminders') !== 'false'));
 
 document.querySelector('#find-friend').addEventListener('click', () => { const query = document.querySelector('#friend-search').value.trim(); const result = document.querySelector('#friend-result'); if (!query) { result.innerHTML = ''; return; } result.innerHTML = `<div class="search-result"><span class="friend-avatar">${query.slice(0, 2).toUpperCase()}</span><span><b>${query}</b><small>${t('Forge member')}</small></span><button class="invite-button" data-friend="${query}">${t('Add friend')}</button></div>`; result.querySelector('.invite-button').addEventListener('click', () => { saveFriend(query); result.innerHTML = `<p class="social-confirmation">${t('Friend request sent.')}</p>`; }); });
 function friendsKey() { return `forge-friends-${currentUserKey()}`; }
@@ -1765,6 +1789,8 @@ async function handleAuthSubmit() {
 }
 
 document.querySelector('#sign-out').addEventListener('click', signOut);
+document.querySelector('#settings-sign-out').addEventListener('click', signOut);
+document.querySelector('#settings-edit-profile').addEventListener('click', () => document.querySelector('#edit-profile').click());
 
 const verifyResendButton = document.querySelector('#verify-resend');
 if (verifyResendButton) {
@@ -1807,7 +1833,7 @@ if (forgotPasswordForm) {
 			});
 			// The server always answers the same way here, whether or not that email has an
 			// account — so this message can't be used to find out who's registered.
-			if (response.ok) message.style.color = 'var(--lime)';
+			if (response.ok) message.style.color = 'var(--accent)';
 			message.textContent = response.ok
 				? tf('If an account exists for {email}, a reset link is on its way.', { email })
 				: (await response.json().catch(() => ({}))).error || t('Something went wrong.');
