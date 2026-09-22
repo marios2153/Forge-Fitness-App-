@@ -86,6 +86,14 @@ npm start
 
 Visit `http://localhost:8788` — the server hosts the frontend and the `/api/auth/...` endpoints from one process.
 
+Everything above works without Stripe configured — Premium's Subscribe button just responds with "Payments are not configured on this server yet." To actually test checkout locally, also install the [Stripe CLI](https://docs.stripe.com/stripe-cli) (`brew install stripe/stripe-cli/stripe`, `stripe login`) and keep this running in its own terminal while you test:
+
+```bash
+stripe listen --forward-to localhost:8788/api/webhooks/stripe
+```
+
+Stripe can't reach `localhost` on its own, so this forwards test-mode events to your machine and prints the `whsec_...` for `STRIPE_WEBHOOK_SECRET`. See [Taking payments for real](#taking-payments-for-real) for the rest of the Stripe setup.
+
 ### Option B: frontend only (no accounts backend)
 
 Because the app registers a web manifest, serve it over HTTP rather than opening the file directly:
@@ -114,10 +122,11 @@ manifest.json             PWA manifest
 logo.svg                  App icon
 preview.html              Generated single-file build for quick testing
 coach-server-example.js   Example backend for the AI Coach feature (separate from accounts)
-server/                   Accounts backend: signup, login, sessions, verification email
-  index.js                  Express app + all /api/auth/... routes
-  db.js                      JSON-file user store (server/data/users.json, gitignored)
-  mailer.js                  Sends the verification email via Gmail SMTP
+server/                   Backend: accounts, sessions, verification email, Stripe billing
+  index.js                  Express app + all /api/auth/..., /api/data, /api/billing/... routes
+  db.js                      SQLite user + account-data store (server/data/forge.db, gitignored)
+  mailer.js                  Sends verification/reset emails via Gmail SMTP
+  stripe.js                  Stripe SDK wrapper (Checkout, Billing Portal, webhook helpers)
   package.json
   .env.example               Copy to .env and fill in (gitignored)
 ```
@@ -171,7 +180,16 @@ Flow in one line: *user taps Subscribe → `POST /api/billing/checkout` creates 
 
 To go live, you still need to:
 
-1. **Configure Stripe.** In the [Stripe Dashboard](https://dashboard.stripe.com), create a "Forge Premium" product with two recurring prices (monthly €5.99, yearly €64.69), then fill in `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` and `STRIPE_WEBHOOK_SECRET` in `server/.env` — see the comments there for exactly where each one comes from, including the `stripe listen` command for local webhook testing.
+1. **Configure Stripe.** Create a "Forge Premium" product with two recurring prices (monthly €5.99, yearly €64.69) — either in the [Stripe Dashboard](https://dashboard.stripe.com) (Product catalog → Add product), or with the Stripe CLI once it's logged in:
+
+   ```bash
+   stripe products create --name="Forge Premium"
+   # copy the printed prod_... id into the next two commands
+   stripe prices create --unit-amount=599 --currency=eur -d "recurring[interval]=month" --product=prod_...
+   stripe prices create --unit-amount=6469 --currency=eur -d "recurring[interval]=year" --product=prod_...
+   ```
+
+   Then fill in `STRIPE_SECRET_KEY` (Dashboard → Developers → API keys — this one only ever belongs in `.env`, never in the Dashboard's CLI output or a commit), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` (the `price_...` ids from above) and `STRIPE_WEBHOOK_SECRET` (`stripe listen --print-secret`, or a Dashboard webhook endpoint in production) in `server/.env`.
 
 2. **Switch to Live mode keys** once you're ready to take real payments (Test mode keys work end-to-end against Stripe's test card numbers first).
 
