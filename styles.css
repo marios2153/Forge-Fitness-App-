@@ -807,8 +807,6 @@ h1 { font-size: 26px; line-height: 1.05; letter-spacing: -.9px; margin: 0; font-
 .billing-option strong { color: var(--ink-text); font-size: 16px; margin-top: 5px; }
 .billing-option small { font-size: 8px; margin-top: 3px; }
 .billing-option.active { border-color: var(--accent); background: rgba(200, 255, 61, .08); color: var(--ink-text); }
-.payment-summary { background: var(--accent); color: var(--accent-ink); padding: 13px; font: 700 13px var(--mono); margin: 0 0 20px; border-radius: var(--radius-sm); }
-.secure-note { display: block; color: var(--text-muted); font-size: 9px; line-height: 1.4; margin-top: 12px; }
 
 .premium-lock { background: var(--ink); color: var(--ink-text); padding: 24px 18px; text-align: center; margin-bottom: 14px; border-radius: var(--radius-lg); }
 .premium-lock .lock-icon { font-size: 27px; display: block; margin-bottom: 10px; }

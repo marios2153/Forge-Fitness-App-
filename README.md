@@ -76,6 +76,7 @@ Open `server/.env` and fill in:
 
 - `JWT_SECRET` — any long random string (or generate one: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`)
 - `GMAIL_APP_PASSWORD` — an [App Password](https://myaccount.google.com/apppasswords) for the `pixelforgenetworks@gmail.com` Gmail account (requires 2-Step Verification on that account). Without this, the server still works — it just prints the verification link to its console instead of emailing it.
+- `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `STRIPE_WEBHOOK_SECRET` — needed for Forge Premium subscriptions; see [Taking payments for real](#taking-payments-for-real). Without these, the rest of the app works fine — Subscribe just responds with "Payments are not configured on this server yet."
 
 Then:
 
@@ -142,7 +143,7 @@ open("preview.html", "w", encoding="utf-8").write(html)
 
 ## Data storage
 
-Accounts (email, hashed password, profile, verification status) live in `server/data/users.json`, managed by the backend — not in the browser. Everything else — workouts, reports, calendar, goals, social — still lives in the browser's `localStorage`, scoped per account by email. (`forge-accounts` below is only used by the no-backend fallback described in [Accounts](#accounts).)
+Accounts (email, hashed password, profile, verification status, Stripe customer id) live in `server/data/forge.db` (SQLite), managed by the backend — not in the browser. Everything else — workouts, reports, calendar, goals, social — still lives in the browser's `localStorage`, scoped per account by email. (`forge-accounts` below is only used by the no-backend fallback described in [Accounts](#accounts).)
 
 | Key | Contents |
 | --- | --- |
@@ -153,7 +154,7 @@ Accounts (email, hashed password, profile, verification status) live in `server/
 | `forge-reports-{user}` | Completed session reports |
 | `forge-calendar-{user}` | Training and rest days with times |
 | `forge-requests-{user}` | Pending friend requests and gym invites |
-| `forge-premium` | Subscription state |
+| `forge-premium` | Subscription state — mirrored down from the server on every load; the server (via the Stripe webhook), not this key, is authoritative, and the client can no longer set it directly |
 | `forge-nutrition-goal` | Selected nutrition goal |
 | `forge-theme` | Chosen colour theme |
 | `forge-language` | Interface language |
@@ -164,23 +165,21 @@ Clearing browser data wipes the local data (workouts, reports, calendar, goals).
 
 ## Taking payments for real
 
-The checkout in the app is a **demo**. It accepts any input and flips a flag in `localStorage`, which anyone can edit from DevTools. Do not ship it as-is.
+Forge Premium checkout is backed by real **Stripe Checkout**. Tapping Subscribe asks the server for a Checkout Session and redirects to Stripe's hosted page — card details never touch this app's code. A Stripe webhook is the only thing that can turn Premium on, so it can't be flipped from DevTools like the old demo checkout could.
 
-To handle real subscriptions:
+Flow in one line: *user taps Subscribe → `POST /api/billing/checkout` creates a Stripe Checkout session → user pays on Stripe → the `checkout.session.completed`/`customer.subscription.*` webhook updates `server/data/forge.db` → the client re-reads `/api/data` and mirrors the result into `forge-premium`.*
 
-1. **Payment provider.** Create a [Stripe](https://stripe.com) account and add a product with two prices: monthly (€5.99) and yearly (€64.69, a 10% saving). Use **Stripe Checkout** so card details never touch your code and you avoid PCI scope.
+To go live, you still need to:
 
-2. **Backend.** You need a server — Node/Express, Firebase Functions, Supabase Edge Functions, anything. The browser cannot hold your Stripe secret key. The server creates checkout sessions and answers "is this user a subscriber?"
+1. **Configure Stripe.** In the [Stripe Dashboard](https://dashboard.stripe.com), create a "Forge Premium" product with two recurring prices (monthly €5.99, yearly €64.69), then fill in `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` and `STRIPE_WEBHOOK_SECRET` in `server/.env` — see the comments there for exactly where each one comes from, including the `stripe listen` command for local webhook testing.
 
-3. **Webhooks.** Stripe posts events (`checkout.session.completed`, `invoice.paid`, `customer.subscription.deleted`) to your server. Update your database there. The premium flag must live server-side, not in `localStorage`.
+2. **Switch to Live mode keys** once you're ready to take real payments (Test mode keys work end-to-end against Stripe's test card numbers first).
 
-4. **Invoices.** Stripe emails receipts automatically. In Greece, legal invoicing also requires reporting to **myDATA** (AADE), usually through a provider such as Elorus, Softone or Epsilon Net.
+3. **Invoices.** Stripe emails receipts automatically. In Greece, legal invoicing also requires reporting to **myDATA** (AADE), usually through a provider such as Elorus, Softone or Epsilon Net.
 
-5. **VAT.** Enable **Stripe Tax** — mandatory for digital services sold across the EU.
+4. **VAT.** Enable **Stripe Tax** — mandatory for digital services sold across the EU. Not wired up in code; it's a Stripe Dashboard setting.
 
-6. **App stores.** Apple and Google forbid Stripe for digital subscriptions in native apps. You would need Apple In-App Purchase and Google Play Billing (15–30% commission). [RevenueCat](https://www.revenuecat.com) unifies both.
-
-Flow in one line: *user taps Subscribe → server creates a Stripe Checkout session → user pays on Stripe → webhook updates your database → app asks the server whether the user is premium.*
+5. **App stores.** Apple and Google forbid Stripe for digital subscriptions in native apps. If Forge ever ships as a native iOS/Android app rather than a PWA, you'd need Apple In-App Purchase and Google Play Billing (15–30% commission) instead — [RevenueCat](https://www.revenuecat.com) unifies both. The current web app is unaffected.
 
 ---
 

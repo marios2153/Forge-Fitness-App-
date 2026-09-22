@@ -18,6 +18,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('./db');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
+const billing = require('./stripe');
 
 const PORT = process.env.PORT || 8788;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
@@ -33,6 +34,32 @@ const SESSION_COOKIE = 'forge_session';
 const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days: sign in once, stay in.
 
 const app = express();
+
+// Stripe webhook: needs the *raw* request body to verify its signature, so this is registered
+// — with its own express.raw() — before the app-wide express.json() below, which would
+// otherwise parse (and consume) the body first and break signature verification. Being an
+// exact-path app.post(), it never touches requests to any other route.
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!billing.isConfigured()) return res.status(503).end();
+
+  let event;
+  try {
+    event = billing.stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (error) {
+    console.error('[server] Stripe webhook signature verification failed:', error.message);
+    return res.status(400).send(`Webhook Error: ${error.message}`);
+  }
+
+  try {
+    await handleStripeEvent(event);
+  } catch (error) {
+    // Logged, not re-thrown as a 5xx: Stripe retries failed webhooks, and retrying a handler
+    // that just failed on a bug or a missing user won't fix either on the next attempt.
+    console.error('[server] Error handling Stripe webhook event:', event.type, error);
+  }
+  res.json({ received: true });
+});
+
 // Default 100kb body limit is too small once account data (workout history, reports, ...)
 // syncs through here — see /api/data/bulk below.
 app.use(express.json({ limit: '8mb' }));
@@ -41,9 +68,14 @@ app.use(cookieParser());
 // The exact set of account-data categories the client is allowed to sync (see the matching
 // SYNCED_ACCOUNT_KEYS/SYNCED_GLOBAL_KEYS lists in app.js). Anything else is silently dropped
 // rather than accepted, so a compromised or buggy client can't stuff arbitrary rows in.
+//
+// 'premium' and 'subscription' are deliberately NOT in this set even though the client reads
+// and mirrors them (see hydrateFromServer in app.js) — they're written server-side only, by
+// the Stripe webhook above, once money has actually moved. If they were client-writable here,
+// anyone could grant themselves Premium with one `localStorage.setItem` call.
 const ALLOWED_DATA_KEYS = new Set([
   'avatar', 'badges', 'calendar', 'coach', 'coach-usage', 'friends', 'goals', 'prs', 'reports', 'requests', 'workouts',
-  'billing', 'premium', 'subscription', 'theme', 'language', 'tracking', 'nutrition-goal', 'reminders', 'reminder-settings', 'last-invite',
+  'billing', 'theme', 'language', 'tracking', 'nutrition-goal', 'reminders', 'reminder-settings', 'last-invite',
 ]);
 const MAX_DATA_VALUE_LENGTH = 2 * 1024 * 1024; // 2MB per key — generous for workout/report history, blocks abuse
 
@@ -307,6 +339,121 @@ app.put('/api/data/bulk', requireAuth, (req, res) => {
   db.setUserDataBulk(req.user.id, values);
   res.json({ ok: true });
 });
+
+// ---- Billing (Stripe) ----
+// Forge Premium is a Stripe Checkout subscription. The client never collects card details
+// itself — it asks here for a Checkout Session URL and redirects the browser to Stripe's
+// hosted page. Premium status itself is set only by the webhook above once Stripe confirms
+// payment, never by this route or by the client — see the ALLOWED_DATA_KEYS comment.
+
+app.post('/api/billing/checkout', requireAuth, async (req, res) => {
+  if (!billing.isConfigured()) return res.status(503).json({ error: 'Payments are not configured on this server yet.' });
+  const plan = req.body.plan === 'yearly' ? 'yearly' : 'monthly';
+  const priceId = billing.priceIdForPlan(plan);
+  if (!priceId) return res.status(500).json({ error: `No Stripe price configured for the ${plan} plan.` });
+
+  try {
+    let customerId = req.user.stripeCustomerId;
+    if (!customerId) {
+      const customer = await billing.stripe.customers.create({ email: req.user.email, metadata: { userId: req.user.id } });
+      customerId = customer.id;
+      await db.updateUser(req.user.id, { stripeCustomerId: customerId });
+    }
+
+    const session = await billing.stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      client_reference_id: req.user.id,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${PUBLIC_BASE_URL}/?billing=success`,
+      cancel_url: `${PUBLIC_BASE_URL}/?billing=cancel`,
+      allow_promotion_codes: true,
+    });
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('[server] Could not create a Stripe checkout session:', error);
+    res.status(500).json({ error: 'Could not start checkout. Try again in a moment.' });
+  }
+});
+
+// Stripe-hosted page for managing or cancelling an existing subscription — a live
+// subscription needs a self-serve cancel path, and this is Stripe's.
+app.post('/api/billing/portal', requireAuth, async (req, res) => {
+  if (!billing.isConfigured()) return res.status(503).json({ error: 'Payments are not configured on this server yet.' });
+  if (!req.user.stripeCustomerId) return res.status(400).json({ error: 'No billing account yet — subscribe first.' });
+  try {
+    const session = await billing.stripe.billingPortal.sessions.create({
+      customer: req.user.stripeCustomerId,
+      return_url: `${PUBLIC_BASE_URL}/?billing=portal-return`,
+    });
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('[server] Could not create a Stripe billing portal session:', error);
+    res.status(500).json({ error: 'Could not open billing management. Try again in a moment.' });
+  }
+});
+
+async function findUserForStripeObject(object) {
+  if (!object.customer) return null;
+  return db.findByStripeCustomerId(object.customer);
+}
+
+function planFromSubscription(subscription) {
+  const priceId = subscription.items && subscription.items.data[0] && subscription.items.data[0].price.id;
+  return billing.planForPriceId(priceId) || 'monthly';
+}
+
+function syncPremiumFromSubscription(user, subscription) {
+  const active = subscription.status === 'active' || subscription.status === 'trialing';
+  db.setUserDataBulk(user.id, {
+    premium: active ? 'active' : 'inactive',
+    subscription: JSON.stringify({
+      status: subscription.status,
+      plan: planFromSubscription(subscription),
+      stripeSubscriptionId: subscription.id,
+      currentPeriodEnd: subscription.current_period_end ? subscription.current_period_end * 1000 : null,
+      cancelAtPeriodEnd: !!subscription.cancel_at_period_end,
+      updatedAt: new Date().toISOString(),
+    }),
+  });
+}
+
+async function handleStripeEvent(event) {
+  switch (event.type) {
+    case 'checkout.session.completed': {
+      const session = event.data.object;
+      if (session.mode !== 'subscription' || !session.subscription) return;
+      const user = (session.client_reference_id && db.findById(session.client_reference_id))
+        || await findUserForStripeObject(session);
+      if (!user) { console.error('[server] Stripe checkout completed for an unknown user:', session.id); return; }
+      const subscription = await billing.stripe.subscriptions.retrieve(session.subscription);
+      syncPremiumFromSubscription(user, subscription);
+      console.log(`[server] Premium activated for ${user.email}.`);
+      break;
+    }
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated': {
+      const subscription = event.data.object;
+      const user = await findUserForStripeObject(subscription);
+      if (!user) return;
+      syncPremiumFromSubscription(user, subscription);
+      break;
+    }
+    case 'customer.subscription.deleted': {
+      const subscription = event.data.object;
+      const user = await findUserForStripeObject(subscription);
+      if (!user) return;
+      db.setUserDataBulk(user.id, {
+        premium: 'inactive',
+        subscription: JSON.stringify({ status: 'canceled', updatedAt: new Date().toISOString() }),
+      });
+      console.log(`[server] Premium deactivated for ${user.email}.`);
+      break;
+    }
+    default:
+      break;
+  }
+}
 
 app.get('/api/auth/verify', async (req, res) => {
   const { token, email } = req.query;

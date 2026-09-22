@@ -499,7 +499,13 @@ const trackerFields = ['meal', 'water', 'calorie', 'steps'];
 const savedTracking = JSON.parse(localStorage.getItem('forge-tracking') || '{}');
 trackerFields.forEach((field) => { const input = document.querySelector(`#${field}-input`); if (input && savedTracking[field]) input.value = savedTracking[field]; });
 const subscribeButton = document.querySelector('#subscribe-button');
-function updateSubscriptionButton() { const yearly = localStorage.getItem('forge-billing') === 'yearly'; subscribeButton.innerHTML = localStorage.getItem('forge-premium') === 'active' ? `${t('Premium active')} · ${yearly ? '€64.69 / ' + t('year') : '€5.99 / ' + t('month')} ✓` : `${t('Subscribe for')} ${yearly ? '€64.69 / ' + t('year') : '€5.99 / ' + t('month')} <span>→</span>`; }
+const manageBillingButton = document.querySelector('#manage-billing-button');
+function updateSubscriptionButton() {
+	const yearly = localStorage.getItem('forge-billing') === 'yearly';
+	const active = isPremium();
+	subscribeButton.innerHTML = active ? `${t('Premium active')} · ${yearly ? '€64.69 / ' + t('year') : '€5.99 / ' + t('month')} ✓` : `${t('Subscribe for')} ${yearly ? '€64.69 / ' + t('year') : '€5.99 / ' + t('month')} <span>→</span>`;
+	manageBillingButton.hidden = !active;
+}
 function setPremiumTab(name) {
 	document.querySelectorAll('.premium-tab').forEach((button) => button.classList.toggle('active', button.dataset.ptab === name));
 	document.querySelectorAll('.premium-tab-content').forEach((panel) => panel.classList.toggle('active', panel.id === `premium-${name}`));
@@ -507,8 +513,41 @@ function setPremiumTab(name) {
 document.querySelectorAll('.premium-tab').forEach((button) => button.addEventListener('click', () => setPremiumTab(button.dataset.ptab)));
 document.querySelectorAll('[data-ptab-link]').forEach((button) => button.addEventListener('click', () => setPremiumTab(button.dataset.ptabLink)));
 
-document.querySelector('#subscribe-button').addEventListener('click', () => { if (localStorage.getItem('forge-premium') === 'active') { showToast(t('Forge Premium is already active.')); return; } const yearly = localStorage.getItem('forge-billing') === 'yearly'; document.querySelector('#payment-summary').textContent = yearly ? `€64.69 / ${t('year')} · ${t('save 10%')}` : `€5.99 / ${t('month')}`; showModal('payment-modal'); });
-document.querySelector('#payment-form').addEventListener('submit', (event) => { event.preventDefault(); const plan = localStorage.getItem('forge-billing') || 'monthly'; localStorage.setItem('forge-premium', 'active'); localStorage.setItem('forge-subscription', JSON.stringify({ status: 'active', plan, started: new Date().toISOString(), lastFour: document.querySelector('#card-number').value.replace(/\D/g, '').slice(-4) })); event.target.reset(); closeModal(); updateSubscriptionButton(); renderNutritionLock(); applyAvatar(); renderBadges(); initCoach(); showToast(t('Payment accepted. Premium is active.')); });
+// Real checkout: the server creates a Stripe Checkout Session and hands back its URL, which
+// Stripe's own hosted page collects card details on — this app never sees or stores them.
+// Premium only actually turns on once the Stripe webhook (server/index.js) confirms payment
+// and the next hydrateFromServer() pulls that down; see the ALLOWED_DATA_KEYS comment there.
+async function startCheckout(button) {
+	if (authMode !== 'server') { showToast(t('Sign in with an account to subscribe.')); return; }
+	const plan = localStorage.getItem('forge-billing') === 'yearly' ? 'yearly' : 'monthly';
+	const originalText = button.innerHTML;
+	button.disabled = true;
+	button.innerHTML = t('Redirecting to checkout…');
+	try {
+		const response = await fetch('/api/billing/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ plan }) });
+		const data = await response.json().catch(() => ({}));
+		if (!response.ok || !data.url) throw new Error(data.error || 'Could not start checkout.');
+		window.location.href = data.url;
+	} catch (error) {
+		showToast(error.message || t('Could not reach the server. Is it running?'));
+		button.disabled = false;
+		button.innerHTML = originalText;
+	}
+}
+document.querySelector('#subscribe-button').addEventListener('click', () => { if (isPremium()) { showToast(t('Forge Premium is already active.')); return; } startCheckout(subscribeButton); });
+manageBillingButton.addEventListener('click', async () => {
+	manageBillingButton.disabled = true;
+	try {
+		const response = await fetch('/api/billing/portal', { method: 'POST', credentials: 'include' });
+		const data = await response.json().catch(() => ({}));
+		if (!response.ok || !data.url) throw new Error(data.error || 'Could not open billing management.');
+		window.location.href = data.url;
+	} catch (error) {
+		showToast(error.message || t('Could not reach the server. Is it running?'));
+	} finally {
+		manageBillingButton.disabled = false;
+	}
+});
 document.querySelectorAll('.billing-option').forEach((option) => option.addEventListener('click', () => { document.querySelectorAll('.billing-option').forEach((item) => item.classList.remove('active')); option.classList.add('active'); localStorage.setItem('forge-billing', option.dataset.billing); updateSubscriptionButton(); showToast(`${option.dataset.billing === 'yearly' ? t('Yearly') : t('Monthly')} ${t('plan selected.')}`); }));
 const savedBilling = localStorage.getItem('forge-billing') || 'monthly'; document.querySelector(`.billing-option[data-billing="${savedBilling}"]`)?.classList.add('active'); updateSubscriptionButton();
 document.querySelector('#save-trackers').addEventListener('click', () => { const tracking = Object.fromEntries(trackerFields.map((field) => [field, document.querySelector(`#${field}-input`).value || 0])); localStorage.setItem('forge-tracking', JSON.stringify(tracking)); showToast(t('Today\'s tracking saved.')); });
@@ -1683,6 +1722,7 @@ async function enterApp(email, profile, options = {}) {
 	if (authMode === 'server') await hydrateFromServer();
 	// Per-account data has its own storage key, so refresh anything that reads it.
 	renderWorkoutTemplates();
+	updateSubscriptionButton();
 	renderNutritionLock();
 	renderRequests();
 	initCalendar();
@@ -1929,5 +1969,31 @@ document.querySelector('#profile-page-sign-out').addEventListener('click', () =>
 	if (!verifyParam) return;
 	if (verifyParam === 'success') { showToast(t('Email verified. Thanks!')); updateVerifyBanner(true); }
 	else if (verifyParam === 'expired') { showToast(t('That verification link expired or is invalid.')); }
+	window.history.replaceState({}, '', window.location.pathname);
+})();
+
+// Stripe Checkout / Billing Portal redirect back here with ?billing=... (see
+// /api/billing/checkout and /api/billing/portal in server/index.js). Premium itself is
+// already refreshed by restoreSession()'s hydrateFromServer() above — this just confirms it
+// to the person, since the webhook that actually flips it can land a beat after the redirect.
+(function handleBillingRedirect() {
+	const billingParam = new URLSearchParams(window.location.search).get('billing');
+	if (!billingParam) return;
+	if (billingParam === 'success') {
+		showToast(t('Payment received — Premium is activating now.'));
+		// The Stripe webhook that actually flips premium on can land a beat after this redirect
+		// does, so re-pull once more shortly after instead of leaving the UI looking locked.
+		setTimeout(async () => {
+			if (authMode !== 'server') return;
+			await hydrateFromServer();
+			updateSubscriptionButton();
+			renderNutritionLock();
+			applyAvatar();
+			renderBadges();
+			initCoach();
+		}, 2500);
+	} else if (billingParam === 'cancel') {
+		showToast(t('Checkout cancelled.'));
+	}
 	window.history.replaceState({}, '', window.location.pathname);
 })();

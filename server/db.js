@@ -49,6 +49,15 @@ db.exec(`
   if (!columns.includes('reset_token_expires')) db.exec('ALTER TABLE users ADD COLUMN reset_token_expires INTEGER');
 }());
 
+// Stripe customer id, added once billing existed. Webhooks (see server/index.js) look a user
+// up by this to know whose subscription just changed, so it needs its own indexed column
+// rather than living in the generic user_data blob store like premium/subscription do.
+(function addStripeCustomerIdColumnIfMissing() {
+  const columns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
+  if (!columns.includes('stripe_customer_id')) db.exec('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT');
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_stripe_customer_id ON users(stripe_customer_id)');
+}());
+
 // One-time migration from the old JSON-file store this server used before SQLite. Only
 // runs while the users table is still empty, so it can never clobber real SQLite data —
 // safe to leave in place even long after everyone's migrated.
@@ -102,6 +111,7 @@ function rowToUser(row) {
     verificationTokenExpires: row.verification_token_expires,
     resetTokenHash: row.reset_token_hash,
     resetTokenExpires: row.reset_token_expires,
+    stripeCustomerId: row.stripe_customer_id,
     profile: JSON.parse(row.profile),
     createdAt: row.created_at,
   };
@@ -110,6 +120,7 @@ function rowToUser(row) {
 const statements = {
   findByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
   findById: db.prepare('SELECT * FROM users WHERE id = ?'),
+  findByStripeCustomerId: db.prepare('SELECT * FROM users WHERE stripe_customer_id = ?'),
   insertUser: db.prepare(`
     INSERT INTO users (id, email, password_hash, verified, verification_token_hash, verification_token_expires, profile, created_at)
     VALUES (@id, @email, @passwordHash, @verified, @verificationTokenHash, @verificationTokenExpires, @profile, @createdAt)
@@ -117,7 +128,8 @@ const statements = {
   updateUser: db.prepare(`
     UPDATE users SET email = @email, password_hash = @passwordHash, verified = @verified,
       verification_token_hash = @verificationTokenHash, verification_token_expires = @verificationTokenExpires,
-      reset_token_hash = @resetTokenHash, reset_token_expires = @resetTokenExpires, profile = @profile
+      reset_token_hash = @resetTokenHash, reset_token_expires = @resetTokenExpires,
+      stripe_customer_id = @stripeCustomerId, profile = @profile
     WHERE id = @id
   `),
   getUserData: db.prepare('SELECT key, value FROM user_data WHERE user_id = ?'),
@@ -134,6 +146,10 @@ function findByEmail(email) {
 
 function findById(id) {
   return rowToUser(statements.findById.get(id));
+}
+
+function findByStripeCustomerId(customerId) {
+  return rowToUser(statements.findByStripeCustomerId.get(customerId));
 }
 
 async function insertUser(user) {
@@ -163,6 +179,7 @@ async function updateUser(id, changes) {
     verificationTokenExpires: merged.verificationTokenExpires || null,
     resetTokenHash: merged.resetTokenHash || null,
     resetTokenExpires: merged.resetTokenExpires || null,
+    stripeCustomerId: merged.stripeCustomerId || null,
     profile: JSON.stringify(merged.profile),
   });
   return findById(id);
@@ -194,4 +211,4 @@ function setUserDataBulk(userId, values) {
   }
 }
 
-module.exports = { findByEmail, findById, insertUser, updateUser, getUserData, setUserDataBulk };
+module.exports = { findByEmail, findById, findByStripeCustomerId, insertUser, updateUser, getUserData, setUserDataBulk };
